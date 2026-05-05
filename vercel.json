@@ -1,14 +1,12 @@
 {
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
     {
-      "handle": "filesystem"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!assets/|favicon.ico|manifest.json|icon-).*)",
       "destination": "/index.html"
     }
   ]
