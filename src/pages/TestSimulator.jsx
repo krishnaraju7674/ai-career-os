@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import AppShell from '../components/AppShell'
-import { Panel } from '../components/ui'
+import { Panel, primaryButtonClass } from '../components/ui'
 import { useToast } from '../context/ToastContext'
 
 const QUESTIONS = [

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../components/AppShell'
-import { Panel } from '../components/ui'
+import { Panel, primaryButtonClass } from '../components/ui'
 import { useAuth } from '../context/useAuth'
 import { useToast } from '../context/ToastContext'
 import { readUserData, writeUserData } from '../services/localUserData'
