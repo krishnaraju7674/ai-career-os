@@ -61,16 +61,16 @@ export default function AppShell({ title, subtitle, actions, children, maxWidth 
   const initials = (user?.email || 'U').slice(0, 2).toUpperCase()
 
   const sidebarMarkup = (
-    <div className="flex flex-col h-full bg-[#020617]">
+    <div className="flex flex-col h-full bg-[#0b1c2b] border-r border-white/[0.04]">
       {/* Logo */}
-      <div className="h-16 flex items-center px-5 border-b border-white/[0.06] shrink-0">
-        <button onClick={() => { navigate('/dashboard'); setOpen(false) }} className="flex items-center gap-3 group">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:shadow-cyan-500/50 transition-all">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-            </svg>
+      <div className="h-16 flex items-center px-5 border-b border-white/[0.04] shrink-0">
+        <button onClick={() => { navigate('/'); setOpen(false) }} className="flex items-center gap-3 group">
+          <div 
+            style={{ fontFamily: "'Instrument Serif', serif" }}
+            className="text-2xl tracking-tight text-white cursor-pointer select-none"
+          >
+            Velorah<sup className="text-xs">®</sup>
           </div>
-          <span className="font-extrabold text-sm text-white tracking-wide">AI Career OS</span>
         </button>
       </div>
 
@@ -78,7 +78,7 @@ export default function AppShell({ title, subtitle, actions, children, maxWidth 
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
         {navSections.map((section, idx) => (
           <div key={idx} className="space-y-1.5">
-            <h4 className="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-2">
+            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-2">
               {section.title}
             </h4>
             <div className="space-y-0.5">
@@ -90,8 +90,8 @@ export default function AppShell({ title, subtitle, actions, children, maxWidth 
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group ${
                       isActive
-                        ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/25 shadow-sm'
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
+                        ? 'bg-white/10 text-white shadow-sm border border-white/10'
+                        : 'text-gray-400 hover:text-gray-250 hover:bg-white/[0.02]'
                     }`
                   }
                 >
@@ -102,7 +102,7 @@ export default function AppShell({ title, subtitle, actions, children, maxWidth 
                       {item.isAi && (
                         <span className={`ml-auto text-[8px] font-black uppercase px-1.5 py-0.5 rounded border transition-colors ${
                           isActive 
-                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' 
+                            ? 'bg-white/20 text-white border-white/30' 
                             : 'bg-white/5 text-gray-500 border-white/10 group-hover:text-gray-400 group-hover:border-white/20'
                         }`}>
                           AI
@@ -118,9 +118,9 @@ export default function AppShell({ title, subtitle, actions, children, maxWidth 
       </nav>
 
       {/* User footer */}
-      <div className="p-3 border-t border-white/[0.06] bg-[#020617] shrink-0">
-        <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/[0.04] transition group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-violet-600 flex items-center justify-center text-xs font-bold shrink-0 text-white shadow-md shadow-cyan-500/20">
+      <div className="p-3 border-t border-white/[0.04] bg-[#0b1c2b] shrink-0">
+        <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/[0.02] transition group">
+          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold shrink-0 text-white border border-white/20">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
@@ -138,9 +138,9 @@ export default function AppShell({ title, subtitle, actions, children, maxWidth 
   )
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex">
+    <div className="min-h-screen bg-[#0b1c2b] text-white flex">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed inset-y-0 left-0 z-40 w-56 flex-col glass border-r border-white/[0.06]">
+      <aside className="hidden md:flex fixed inset-y-0 left-0 z-40 w-56 flex-col glass border-r border-white/[0.04]">
         {sidebarMarkup}
       </aside>
 
@@ -157,13 +157,13 @@ export default function AppShell({ title, subtitle, actions, children, maxWidth 
       {/* Main content */}
       <div className="flex-1 md:pl-56 min-h-screen flex flex-col">
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 h-14 flex items-center gap-4 px-4 glass border-b border-white/[0.06] md:hidden">
+        <header className="sticky top-0 z-30 h-14 flex items-center gap-4 px-4 glass border-b border-white/[0.04] md:hidden">
           <button onClick={() => setOpen(true)} className="text-gray-400 hover:text-white transition p-1">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <span className="font-bold text-sm gradient-text">AI Career OS</span>
+          <span className="font-bold text-sm gradient-text">Velorah</span>
         </header>
 
         <main className={`flex-1 ${maxWidth} mx-auto w-full px-4 md:px-8 py-6 md:py-10`}>

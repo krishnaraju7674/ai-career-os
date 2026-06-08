@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 
-/* ── Animated Counter ── */
+/* ── Animated Number ── */
 export function AnimatedNumber({ value, suffix = '' }) {
   const [cur, setCur] = useState(0)
   useEffect(() => {
@@ -28,11 +28,11 @@ export function ProgressRing({ value = 0, size = 120, stroke = 9, color = 'url(#
     <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
       <defs>
         <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#06b6d4" />
-          <stop offset="100%" stopColor="#8b5cf6" />
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0.4)" />
         </linearGradient>
       </defs>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={stroke} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth={stroke} />
       <circle
         cx={size / 2} cy={size / 2} r={r}
         fill="none" stroke={color === 'url(#ringGrad)' ? `url(#${id})` : color} strokeWidth={stroke}
@@ -51,7 +51,7 @@ export function Skeleton({ className = '' }) {
 /* ── Panel ── */
 export function Panel({ children, className = '', glow = false }) {
   return (
-    <section className={`rounded-2xl glass p-6 transition-all duration-300 hover:border-white/[0.12] ${glow ? 'animate-pulse-glow' : ''} ${className}`}>
+    <section className={`rounded-2xl liquid-glass p-6 transition-all duration-300 ${glow ? 'animate-pulse-glow' : ''} ${className}`}>
       {children}
     </section>
   )
@@ -67,7 +67,7 @@ export function Card3D({ children, className = '', glow = false }) {
     const rect = card.getBoundingClientRect()
     const x = e.clientX - rect.left - rect.width / 2
     const y = e.clientY - rect.top - rect.height / 2
-    const factor = 8 // Tilt angle factor
+    const factor = 6 // Subtle tilt angle
     const rotateX = -(y / rect.height) * factor
     const rotateY = (x / rect.width) * factor
     card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.015, 1.015, 1.015)`
@@ -85,7 +85,7 @@ export function Card3D({ children, className = '', glow = false }) {
         ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className={`card-3d rounded-2xl glass p-6 transition-all duration-200 ease-out border border-white/[0.06] hover:border-cyan-500/35 relative overflow-hidden ${glow ? 'animate-pulse-glow' : ''} ${className}`}
+        className={`card-3d rounded-2xl liquid-glass p-6 transition-all duration-200 ease-out relative overflow-hidden ${glow ? 'animate-pulse-glow' : ''} ${className}`}
       >
         {children}
       </section>
@@ -94,23 +94,15 @@ export function Card3D({ children, className = '', glow = false }) {
 }
 
 /* ── Stat Card ── */
-export function StatCard({ label, value, suffix = '', icon, color = 'cyan', delay = '' }) {
-  const colors = {
-    cyan:    'from-cyan-500/20 to-blue-500/20 border-cyan-500/20 text-cyan-300',
-    blue:    'from-blue-500/20 to-violet-500/20 border-blue-500/20 text-blue-300',
-    emerald: 'from-emerald-500/20 to-teal-500/20 border-emerald-500/20 text-emerald-300',
-    yellow:  'from-yellow-500/20 to-orange-500/20 border-yellow-500/20 text-yellow-300',
-    purple:  'from-purple-500/20 to-pink-500/20 border-purple-500/20 text-purple-300',
-    red:     'from-red-500/20 to-rose-500/20 border-red-500/20 text-red-300',
-    indigo:  'from-indigo-500/20 to-blue-500/20 border-indigo-500/20 text-indigo-300',
-  }
+export function StatCard({ label, value, suffix = '', icon, color = 'neutral', delay = '' }) {
+  // Cinematic styling: minimalist borders and simple highlights
   return (
-    <div className={`animate-fade-up ${delay} rounded-2xl bg-gradient-to-br border p-5 ${colors[color] || colors.cyan}`}>
-      {icon && <div className="mb-3 w-8 h-8 opacity-80">{icon}</div>}
-      <p className="text-2xl font-black text-white">
+    <div className={`animate-fade-up ${delay} rounded-2xl liquid-glass p-5 border border-white/[0.04]`}>
+      {icon && <div className="mb-3 w-8 h-8 opacity-60 text-white">{icon}</div>}
+      <p className="text-2xl font-semibold text-white">
         <AnimatedNumber value={value} suffix={suffix} />
       </p>
-      <p className="mt-1 text-sm opacity-80">{label}</p>
+      <p className="mt-1 text-xs text-[#a3a3a3] font-medium tracking-wide uppercase">{label}</p>
     </div>
   )
 }
@@ -119,7 +111,7 @@ export function StatCard({ label, value, suffix = '', icon, color = 'cyan', dela
 export function Field({ label, children }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
+      <span className="mb-1.5 block text-xs font-semibold text-[#a3a3a3] uppercase tracking-wider">{label}</span>
       {children}
     </label>
   )
@@ -127,21 +119,9 @@ export function Field({ label, children }) {
 
 /* ── Status Badge ── */
 export function StatusBadge({ children, tone = 'gray' }) {
-  const tones = {
-    gray:    'bg-gray-800/80 text-gray-300 border-gray-700/50',
-    cyan:    'bg-cyan-500/10 text-cyan-300 border-cyan-500/30',
-    blue:    'bg-blue-500/10 text-blue-300 border-blue-500/30',
-    green:   'bg-green-500/10 text-green-300 border-green-500/30',
-    emerald: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-    yellow:  'bg-yellow-500/10 text-yellow-300 border-yellow-500/30',
-    orange:  'bg-orange-500/10 text-orange-300 border-orange-500/30',
-    red:     'bg-red-500/10 text-red-300 border-red-500/30',
-    purple:  'bg-purple-500/10 text-purple-300 border-purple-500/30',
-    indigo:  'bg-indigo-500/10 text-indigo-300 border-indigo-500/30',
-  }
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${tones[tone] || tones.gray}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${tone === 'gray' ? 'bg-gray-500' : `bg-current`}`} />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1 text-xs font-semibold text-white">
+      <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
       {children}
     </span>
   )
@@ -149,24 +129,17 @@ export function StatusBadge({ children, tone = 'gray' }) {
 
 /* ── Input/Button classes ── */
 export const inputClass = [
-  'w-full rounded-xl bg-white/[0.04] border border-white/[0.08]',
+  'w-full rounded-xl bg-white/[0.02] border border-white/[0.08]',
   'px-4 py-3 text-white placeholder-gray-600 outline-none',
-  'transition focus:border-cyan-500/60 focus:bg-white/[0.06] focus:ring-1 focus:ring-cyan-500/30',
+  'transition focus:border-white/40 focus:bg-white/[0.04] focus:ring-1 focus:ring-white/10',
 ].join(' ')
 
 export const primaryButtonClass = [
-  'rounded-xl px-5 py-3 font-semibold text-white cursor-pointer',
-  'bg-gradient-to-r from-cyan-500 via-blue-600 to-violet-600 hover:brightness-110',
-  'transition-all duration-200 shadow-lg shadow-cyan-500/20',
-  'disabled:opacity-50 disabled:cursor-not-allowed',
-  'active:scale-[0.98]',
+  'rounded-full px-6 py-2.5 text-sm font-semibold text-white cursor-pointer transition-all duration-300',
+  'liquid-glass hover:scale-[1.03] active:scale-[0.98]',
 ].join(' ')
 
 export const secondaryButtonClass = [
-  'rounded-xl px-5 py-3 font-semibold text-gray-200 cursor-pointer',
-  'bg-white/[0.06] border border-white/[0.08]',
-  'hover:bg-white/[0.1] hover:border-white/[0.15]',
-  'transition-all duration-200',
-  'disabled:opacity-50 disabled:cursor-not-allowed',
-  'active:scale-[0.98]',
+  'rounded-full px-6 py-2.5 text-sm font-semibold text-gray-300 cursor-pointer transition-all duration-300',
+  'bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] hover:text-white active:scale-[0.98]',
 ].join(' ')

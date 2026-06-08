@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../services/supabaseClient'
+import { inputClass } from '../components/ui'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -12,12 +13,10 @@ export default function Login() {
   const location = useLocation()
 
   useEffect(() => {
-    // Check if redirect is needed
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate('/dashboard')
     })
     
-    // Check if signup query param is set
     const searchParams = new URLSearchParams(location.search)
     if (searchParams.get('signup') === 'true') {
       setIsSignup(true)
@@ -44,33 +43,29 @@ export default function Login() {
   const handleKey = (e) => { if (e.key === 'Enter') handleAuth() }
 
   return (
-    <div className="relative min-h-screen bg-[#020617] flex items-center justify-center px-4 overflow-hidden">
-      {/* Background orbs */}
+    <div className="relative min-h-screen bg-[#0b1c2b] flex items-center justify-center px-4 overflow-hidden">
+      {/* Background orbs / minimal depths */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="orb-1 absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-cyan-600/10 blur-3xl" />
-        <div className="orb-2 absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-violet-600/10 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-blue-600/5 blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-white/[0.02] blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-white/[0.01] blur-3xl" />
       </div>
 
-      {/* Grid overlay */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.3) 1px,transparent 1px)', backgroundSize: '48px 48px' }} />
-
-      <div className="relative w-full max-w-md animate-scale-in">
+      <div className="relative w-full max-w-md animate-scale-in z-10">
         {/* Logo */}
         <div className="text-center mb-8 animate-fade-up">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-600 to-violet-600 shadow-2xl shadow-cyan-500/40 mb-4 animate-float">
-            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-            </svg>
+          <div 
+            onClick={() => navigate('/')}
+            style={{ fontFamily: "'Instrument Serif', serif" }}
+            className="text-4xl tracking-tight text-white cursor-pointer select-none mb-2"
+          >
+            Velorah<sup className="text-sm">®</sup>
           </div>
-          <h1 className="text-3xl font-black gradient-text">AI Career OS</h1>
-          <p className="mt-2 text-sm text-gray-500 font-medium">Your personal placement command center</p>
+          <p className="text-xs text-[#a3a3a3] uppercase tracking-widest font-semibold">Cinematic Placement Platform</p>
         </div>
 
         {/* Card */}
-        <div className="glass-strong rounded-3xl p-8 border border-white/[0.08] shadow-2xl">
-          <h2 className="text-xl font-bold mb-1">{isSignup ? 'Create account' : 'Welcome back'}</h2>
+        <div className="liquid-glass rounded-3xl p-8 border border-white/[0.08] shadow-2xl">
+          <h2 className="text-xl font-bold mb-1 text-white">{isSignup ? 'Create account' : 'Welcome back'}</h2>
           <p className="text-sm text-gray-500 mb-6">{isSignup ? 'Start your career journey today.' : 'Log in to your dashboard.'}</p>
 
           <div className="space-y-4">
@@ -79,7 +74,7 @@ export default function Login() {
               <input
                 type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={handleKey}
                 placeholder="you@example.com"
-                className="w-full rounded-xl bg-white/[0.04] border border-white/[0.08] px-4 py-3 text-white placeholder-gray-600 outline-none transition focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30"
+                className={inputClass}
               />
             </div>
             <div>
@@ -87,7 +82,7 @@ export default function Login() {
               <input
                 type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={handleKey}
                 placeholder="••••••••"
-                className="w-full rounded-xl bg-white/[0.04] border border-white/[0.08] px-4 py-3 text-white placeholder-gray-600 outline-none transition focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30"
+                className={inputClass}
               />
             </div>
           </div>
@@ -100,7 +95,7 @@ export default function Login() {
 
           <button
             onClick={handleAuth} disabled={loading}
-            className="mt-6 w-full rounded-xl px-5 py-3.5 font-bold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-violet-600 hover:brightness-110 transition-all duration-200 shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] cursor-pointer"
+            className="mt-6 w-full rounded-full py-3.5 font-bold text-white liquid-glass hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -116,13 +111,13 @@ export default function Login() {
           <p className="mt-5 text-center text-sm text-gray-500 font-medium">
             {isSignup ? 'Already have an account?' : "Don't have an account?"}
             {' '}
-            <button onClick={() => { setIsSignup(!isSignup); setMessage('') }} className="text-cyan-400 font-bold hover:text-cyan-300 transition">
+            <button onClick={() => { setIsSignup(!isSignup); setMessage('') }} className="text-white font-bold hover:underline transition cursor-pointer">
               {isSignup ? 'Login' : 'Sign Up'}
             </button>
           </p>
         </div>
 
-        <p className="text-center text-xs text-gray-700 mt-6">Powered by Supabase + Gemini AI</p>
+        <p className="text-center text-[10px] text-gray-600 mt-6 uppercase tracking-wider font-semibold">Powered by Supabase + Gemini AI</p>
       </div>
     </div>
   )
