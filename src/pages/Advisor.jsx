@@ -74,7 +74,7 @@ export default function Advisor() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [context, setContext] = useState('')
-  const [modelId, setModelId] = useState('gemini-1.5-flash')
+  const [modelId, setModelId] = useState('gemini-2.5-flash')
   const [countdown, setCountdown] = useState(0)
   const [error, setError] = useState('')
   const timerRef = useRef(null)

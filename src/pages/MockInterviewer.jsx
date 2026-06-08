@@ -55,7 +55,7 @@ Do not write out the entire interview, and do not provide the answer. Wait for t
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          modelId: 'gemini-1.5-flash',
+          modelId: 'gemini-2.5-flash',
           contents: [
             { role: 'user', parts: [{ text: initialSystemPrompt }] }
           ]
@@ -112,7 +112,7 @@ Do not write out the entire interview, and do not provide the answer. Wait for t
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          modelId: 'gemini-1.5-flash',
+          modelId: 'gemini-2.5-flash',
           contents: apiContents
         })
       })

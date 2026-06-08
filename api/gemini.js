@@ -28,8 +28,8 @@ export default async function handler(req, res) {
   if (!key) return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' })
 
   // Whitelist models
-  const ALLOWED_MODELS = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
-  const { modelId = 'gemini-1.5-flash', contents } = req.body
+  const ALLOWED_MODELS = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash']
+  const { modelId = 'gemini-2.5-flash', contents } = req.body
   if (!ALLOWED_MODELS.includes(modelId)) return res.status(400).json({ error: 'Invalid model requested' })
   if (!contents) return res.status(400).json({ error: 'contents required' })
 

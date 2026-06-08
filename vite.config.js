@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
             req.on('data', chunk => { body += chunk })
             req.on('end', async () => {
               try {
-                const { modelId = 'gemini-1.5-flash', contents } = JSON.parse(body)
+                const { modelId = 'gemini-2.5-flash', contents } = JSON.parse(body)
                 const key = env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY
                 if (!key) {
                   res.statusCode = 500
