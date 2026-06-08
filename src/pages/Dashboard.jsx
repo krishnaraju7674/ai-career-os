@@ -10,7 +10,8 @@ import {
   AiAdvisorIcon, AiMockCoachIcon, InterviewQsIcon, AptitudeIcon, 
   RoadmapsIcon, CompanyPrepIcon, SalaryIcon, CertificationsIcon, 
   ResourceHubIcon, VideoGuidesIcon, PomodoroIcon, GoalsIcon, 
-  JournalIcon, AchievementsIcon, PlannerIcon, JobTrackerIcon 
+  JournalIcon, AchievementsIcon, PlannerIcon, JobTrackerIcon,
+  TailorIcon, TreeIcon, SimulatorIcon
 } from '../components/icons'
 
 /* Generate last N days as ISO strings */
@@ -26,12 +27,15 @@ const moduleCards = [
   { title: 'Skills Tracker', desc: 'Rate your tech stack', path: '/skills', color: 'from-cyan-500/10 to-blue-500/10 border-cyan-500/20 hover:border-cyan-500/35', icon: <SkillsIcon className="w-6 h-6 text-cyan-400" /> },
   { title: 'Readiness Score', desc: 'Placement probability', path: '/readiness', color: 'from-blue-500/10 to-violet-500/10 border-blue-500/20 hover:border-blue-500/35', icon: <ReadinessIcon className="w-6 h-6 text-blue-400" /> },
   { title: 'Resume Review', desc: 'ATS feedback instantly', path: '/resume', color: 'from-violet-500/10 to-pink-500/10 border-violet-500/20 hover:border-violet-500/35', icon: <ResumeIcon className="w-6 h-6 text-violet-400" /> },
+  { title: 'Resume Tailor', desc: 'ATS bullet & letter builder', path: '/resume-tailor', color: 'from-pink-500/10 to-rose-500/10 border-pink-500/20 hover:border-pink-500/35', icon: <TailorIcon className="w-6 h-6 text-pink-400" /> },
   { title: 'JD Matching', desc: 'Compare profiles vs JD', path: '/jd-analyzer', color: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20 hover:border-emerald-500/35', icon: <JdMatchingIcon className="w-6 h-6 text-emerald-400" /> },
   { title: 'AI Placement Advisor', desc: 'Chat with Gemini mentor', path: '/advisor', color: 'from-pink-500/10 to-purple-500/10 border-pink-500/20 hover:border-pink-500/35', icon: <AiAdvisorIcon className="w-6 h-6 text-pink-400" /> },
   { title: 'AI Mock Coach', desc: 'Grades answers live', path: '/mock-interview', color: 'from-amber-500/10 to-orange-500/10 border-amber-500/20 hover:border-amber-500/35', icon: <AiMockCoachIcon className="w-6 h-6 text-amber-400" /> },
   { title: 'Interview Qs', desc: 'Technical & HR practice', path: '/interview', color: 'from-red-500/10 to-rose-500/10 border-red-500/20 hover:border-red-500/35', icon: <InterviewQsIcon className="w-6 h-6 text-red-400" /> },
   { title: 'Aptitude Test', desc: 'Verbal & Quantitative', path: '/aptitude', color: 'from-teal-500/10 to-cyan-500/10 border-teal-500/20 hover:border-teal-500/35', icon: <AptitudeIcon className="w-6 h-6 text-teal-400" /> },
+  { title: 'Test Simulator', desc: 'Timed mock exam with proctoring', path: '/test-simulator', color: 'from-violet-500/10 to-fuchsia-500/10 border-violet-500/20 hover:border-violet-500/35', icon: <SimulatorIcon className="w-6 h-6 text-violet-400" /> },
   { title: 'Career Roadmaps', desc: 'Specialization guides', path: '/roadmaps', color: 'from-blue-500/10 to-indigo-500/10 border-blue-500/20 hover:border-blue-500/35', icon: <RoadmapsIcon className="w-6 h-6 text-blue-400" /> },
+  { title: 'Skill Tree', desc: 'Gamified quest learning map', path: '/skill-tree', color: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20 hover:border-emerald-500/35', icon: <TreeIcon className="w-6 h-6 text-emerald-400" /> },
   { title: 'Company Prep', desc: 'Rounds & cracking tips', path: '/company-prep', color: 'from-violet-500/10 to-purple-500/10 border-violet-500/20 hover:border-violet-500/35', icon: <CompanyPrepIcon className="w-6 h-6 text-violet-400" /> },
   { title: 'Salary & CTC', desc: 'Hub wise stats', path: '/salary-insights', color: 'from-emerald-500/10 to-green-500/10 border-emerald-500/20 hover:border-emerald-500/35', icon: <SalaryIcon className="w-6 h-6 text-emerald-400" /> },
   { title: 'Certifications', desc: 'Recommended credentials', path: '/certifications', color: 'from-cyan-500/10 to-blue-500/10 border-cyan-500/20 hover:border-cyan-500/35', icon: <CertificationsIcon className="w-6 h-6 text-cyan-400" /> },

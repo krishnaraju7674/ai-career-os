@@ -35,6 +35,9 @@ import Pomodoro from './pages/Pomodoro'
 import Goals from './pages/Goals'
 import Journal from './pages/Journal'
 import Achievements from './pages/Achievements'
+import ResumeTailor from './pages/ResumeTailor'
+import SkillTree from './pages/SkillTree'
+import TestSimulator from './pages/TestSimulator'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -90,6 +93,9 @@ function AppRoutes() {
       <Route path="/goals"           element={<PrivateRoute><Goals /></PrivateRoute>} />
       <Route path="/journal"         element={<PrivateRoute><Journal /></PrivateRoute>} />
       <Route path="/achievements"    element={<PrivateRoute><Achievements /></PrivateRoute>} />
+      <Route path="/resume-tailor"   element={<PrivateRoute><ResumeTailor /></PrivateRoute>} />
+      <Route path="/skill-tree"      element={<PrivateRoute><SkillTree /></PrivateRoute>} />
+      <Route path="/test-simulator"  element={<PrivateRoute><TestSimulator /></PrivateRoute>} />
 
       {/* 404 Catch All */}
       <Route path="*"               element={<NotFound />} />

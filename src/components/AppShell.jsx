@@ -8,7 +8,7 @@ import {
   AiMockCoachIcon, InterviewQsIcon, AptitudeIcon, RoadmapsIcon, 
   CompanyPrepIcon, SalaryIcon, CertificationsIcon, ResourceHubIcon, 
   VideoGuidesIcon, PlannerIcon, GoalsIcon, PomodoroIcon, 
-  JournalIcon, AchievementsIcon 
+  JournalIcon, AchievementsIcon, TailorIcon, TreeIcon, SimulatorIcon
 } from './icons'
 
 const navSections = [
@@ -20,6 +20,7 @@ const navSections = [
       { label: 'Skills Tracker', path: '/skills', icon: <SkillsIcon /> },
       { label: 'Readiness Score', path: '/readiness', icon: <ReadinessIcon /> },
       { label: 'Resume Review', path: '/resume', icon: <ResumeIcon /> },
+      { label: 'Resume Tailor', path: '/resume-tailor', icon: <TailorIcon />, isAi: true },
       { label: 'JD Matching', path: '/jd-analyzer', icon: <JdMatchingIcon /> },
       { label: 'Job Tracker', path: '/applications', icon: <JobTrackerIcon /> },
     ]
@@ -31,12 +32,14 @@ const navSections = [
       { label: 'AI Mock Coach', path: '/mock-interview', icon: <AiMockCoachIcon />, isAi: true },
       { label: 'Interview Qs', path: '/interview', icon: <InterviewQsIcon /> },
       { label: 'Aptitude Test', path: '/aptitude', icon: <AptitudeIcon /> },
+      { label: 'Test Simulator', path: '/test-simulator', icon: <SimulatorIcon /> },
     ]
   },
   {
     title: "Placement Guides",
     items: [
       { label: 'Roadmaps', path: '/roadmaps', icon: <RoadmapsIcon /> },
+      { label: 'Skill Tree', path: '/skill-tree', icon: <TreeIcon /> },
       { label: 'Company Prep', path: '/company-prep', icon: <CompanyPrepIcon /> },
       { label: 'Salary Insights', path: '/salary-insights', icon: <SalaryIcon /> },
       { label: 'Certifications', path: '/certifications', icon: <CertificationsIcon /> },

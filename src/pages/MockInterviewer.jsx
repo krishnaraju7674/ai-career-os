@@ -4,6 +4,7 @@ import { Field, Panel, Card3D, StatusBadge, inputClass, primaryButtonClass, seco
 import { useAuth } from '../context/useAuth'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../services/supabaseClient'
+import { MicrophoneIcon } from '../components/icons'
 
 export default function MockInterviewer() {
   const { user } = useAuth()
@@ -25,6 +26,67 @@ export default function MockInterviewer() {
 
   const messagesEndRef = useRef(null)
 
+  // Speech Recognition states
+  const [isListening, setIsListening] = useState(false)
+  const [speechSupported, setSpeechSupported] = useState(false)
+  const recognitionRef = useRef(null)
+
+  // Analytics states
+  const [qStartTime, setQStartTime] = useState(null)
+  const [totalWords, setTotalWords] = useState(0)
+  const [totalTimeMs, setTotalTimeMs] = useState(0)
+  const [fillerCount, setFillerCount] = useState(0)
+  const [pacingWpm, setPacingWpm] = useState(0)
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SpeechRecognition) {
+      setSpeechSupported(true)
+      const rec = new SpeechRecognition()
+      rec.continuous = true
+      rec.interimResults = true
+      rec.lang = 'en-IN'
+
+      rec.onresult = (e) => {
+        let transcript = ''
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript
+        }
+        setCurrentInput(transcript)
+      }
+
+      rec.onerror = (err) => {
+        console.error("Speech recognition error:", err)
+        setIsListening(false)
+      }
+
+      rec.onend = () => {
+        setIsListening(false)
+      }
+
+      recognitionRef.current = rec
+    }
+  }, [])
+
+  const toggleListening = () => {
+    if (!speechSupported) {
+      toast.show('Speech recognition is not supported in this browser.', 'warning')
+      return
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop()
+      setIsListening(false)
+    } else {
+      try {
+        recognitionRef.current.start()
+        setIsListening(true)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+  }
+
   useEffect(() => {
     // Fetch profile role if any
     supabase.from('profiles').select('roles(role_name)').eq('id', user.id).maybeSingle()
@@ -45,6 +107,10 @@ export default function MockInterviewer() {
     setGrades([])
     setQuestionCount(1)
     setIsFinished(false)
+    setTotalWords(0)
+    setTotalTimeMs(0)
+    setFillerCount(0)
+    setPacingWpm(0)
     
     const initialSystemPrompt = `You are a professional technical interviewer for a ${role} position (${difficulty} level). 
 First, introduce yourself briefly, and then ask ONLY the first technical question. 
@@ -66,6 +132,7 @@ Do not write out the entire interview, and do not provide the answer. Wait for t
       
       const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Let's begin! What is your experience with this tech stack?"
       setHistory([{ role: 'model', text: reply }])
+      setQStartTime(Date.now())
     } catch (err) {
       toast.show('Error initiating interview: ' + err.message, 'error')
       setIsStarted(false)
@@ -79,11 +146,36 @@ Do not write out the entire interview, and do not provide the answer. Wait for t
     if (!currentInput.trim()) return
     const userAns = currentInput
     setCurrentInput('')
+
+    if (isListening) {
+      recognitionRef.current?.stop()
+      setIsListening(false)
+    }
     
     // Add user response to local chat history
     const nextHistory = [...history, { role: 'user', text: userAns }]
     setHistory(nextHistory)
     setLoading(true)
+
+    // Analyze filler words
+    const fillers = ['um', 'uh', 'like', 'so', 'basically', 'actually', 'literally', 'you know', 'mean']
+    const words = userAns.toLowerCase().split(/\s+/).filter(Boolean)
+    const currentFillers = words.filter(w => fillers.includes(w)).length
+    setFillerCount(prev => prev + currentFillers)
+
+    // Calculate pacing WPM
+    let nextWords = totalWords + words.length
+    let nextTimeMs = totalTimeMs
+    if (qStartTime) {
+      const elapsed = Date.now() - qStartTime
+      nextTimeMs += elapsed
+      setTotalWords(nextWords)
+      setTotalTimeMs(nextTimeMs)
+      
+      const totalTimeMin = nextTimeMs / 60000
+      const calculatedWpm = Math.round(nextWords / Math.max(totalTimeMin, 0.05))
+      setPacingWpm(calculatedWpm)
+    }
 
     // Formulate prompt for Gemini
     // If we've asked 5 questions, ask for final wrap-up
@@ -135,6 +227,7 @@ Do not write out the entire interview, and do not provide the answer. Wait for t
 
       setHistory(prev => [...prev, { role: 'model', text: reply }])
       setQuestionCount(nextQNum)
+      setQStartTime(Date.now())
 
       if (nextQNum > 5) {
         setIsFinished(true)
@@ -240,13 +333,27 @@ Do not write out the entire interview, and do not provide the answer. Wait for t
             </div>
 
             {/* Input Box */}
-            <div className="p-4 border-t border-white/[0.06] bg-[#020617]/50 flex gap-3">
+            <div className="p-4 border-t border-white/[0.06] bg-[#020617]/50 flex gap-3 items-center">
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    isListening 
+                      ? 'bg-red-500/20 border-red-500/40 text-red-400 animate-pulse scale-95' 
+                      : 'bg-white/[0.04] border-white/[0.08] text-gray-400 hover:text-white hover:bg-white/[0.08]'
+                  }`}
+                  title={isListening ? "Stop listening" : "Start voice input"}
+                >
+                  <MicrophoneIcon className="w-5 h-5" />
+                </button>
+              )}
               <textarea
                 value={currentInput}
                 onChange={(e) => setCurrentInput(e.target.value)}
                 onKeyDown={handleKey}
                 disabled={loading || isFinished}
-                placeholder={isFinished ? "Interview complete! Check your stats on the right." : "Type your technical answer here (press Enter to submit)..."}
+                placeholder={isFinished ? "Interview complete! Check your stats on the right." : (isListening ? "Listening... Speak clearly" : "Type or speak your technical answer...")}
                 className={`${inputClass} !py-2.5 !px-4 text-sm flex-1 resize-none h-12`}
               />
               <button
@@ -274,6 +381,26 @@ Do not write out the entire interview, and do not provide the answer. Wait for t
                   }`}
                   style={{ width: `${avgScore}%` }}
                 />
+              </div>
+            </Panel>
+
+            <Panel>
+              <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider mb-4">Communication Metrics</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl text-center">
+                  <span className="text-[10px] font-bold text-cyan-400 block uppercase">Speech Pacing</span>
+                  <p className="text-2xl font-black text-white mt-1">{pacingWpm || '—'} <span className="text-[10px] font-normal text-gray-500">WPM</span></p>
+                  <span className="text-[9px] text-gray-500 block mt-1 leading-tight">
+                    {pacingWpm === 0 ? 'Speak to measure' : pacingWpm < 110 ? 'Slow (Ideal: 110-150)' : pacingWpm > 160 ? 'Fast (Ideal: 110-150)' : 'Ideal Pacing'}
+                  </span>
+                </div>
+                <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl text-center">
+                  <span className="text-[10px] font-bold text-cyan-400 block uppercase">Filler Words</span>
+                  <p className={`text-2xl font-black mt-1 ${fillerCount > 5 ? 'text-yellow-400' : 'text-white'}`}>{fillerCount}</p>
+                  <span className="text-[9px] text-gray-500 block mt-1 leading-tight">
+                    {fillerCount === 0 ? 'Excellent clarity' : fillerCount > 8 ? 'Try to use pauses' : 'Moderate usage'}
+                  </span>
+                </div>
               </div>
             </Panel>
 

@@ -176,3 +176,36 @@ export function AchievementsIcon({ className = "w-5 h-5" }) {
     </svg>
   )
 }
+
+export function MicrophoneIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3z" />
+    </svg>
+  )
+}
+
+export function TailorIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm0 9a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm2-3.5L18 19m-10-8L18 5" />
+    </svg>
+  )
+}
+
+export function TreeIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v4.5M12 16.5V21m0-13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M6.75 12h10.5M4.5 12a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5zm15 0a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5z" />
+    </svg>
+  )
+}
+
+export function SimulatorIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4" />
+    </svg>
+  )
+}
+
