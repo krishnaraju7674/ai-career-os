@@ -56,9 +56,9 @@ export default function Login() {
           <div 
             onClick={() => navigate('/')}
             style={{ fontFamily: "'Instrument Serif', serif" }}
-            className="text-4xl tracking-tight text-white cursor-pointer select-none mb-2"
+            className="text-4xl tracking-tight text-white cursor-pointer select-none font-bold mb-2"
           >
-            Velorah<sup className="text-sm">®</sup>
+            AI Career OS
           </div>
           <p className="text-xs text-[#a3a3a3] uppercase tracking-widest font-semibold">Cinematic Placement Platform</p>
         </div>
@@ -100,7 +100,7 @@ export default function Login() {
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
                 Please wait...

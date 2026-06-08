@@ -37,9 +37,9 @@ export default function LandingPage() {
         <div 
           onClick={() => navigate('/')} 
           style={{ fontFamily: "'Instrument Serif', serif" }}
-          className="text-3xl tracking-tight text-white cursor-pointer select-none"
+          className="text-3xl font-bold tracking-tight text-white cursor-pointer select-none"
         >
-          Velorah<sup className="text-xs">®</sup>
+          AI Career OS
         </div>
 
         {/* Nav Links */}
@@ -100,7 +100,7 @@ export default function LandingPage() {
 
       {/* Subtle Footer */}
       <footer className="relative z-10 w-full max-w-7xl mx-auto px-8 py-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[#a3a3a3] gap-4">
-        <p>&copy; {new Date().getFullYear()} Velorah. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} AI Career OS. All rights reserved.</p>
         <p className="tracking-widest uppercase font-semibold">Cinematic Digital Platform</p>
       </footer>
     </div>

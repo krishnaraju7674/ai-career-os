@@ -2,48 +2,56 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { supabase } from '../services/supabaseClient'
+import { 
+  DashboardIcon, ProfileIcon, SkillsIcon, ReadinessIcon, 
+  ResumeIcon, JdMatchingIcon, JobTrackerIcon, AiAdvisorIcon, 
+  AiMockCoachIcon, InterviewQsIcon, AptitudeIcon, RoadmapsIcon, 
+  CompanyPrepIcon, SalaryIcon, CertificationsIcon, ResourceHubIcon, 
+  VideoGuidesIcon, PlannerIcon, GoalsIcon, PomodoroIcon, 
+  JournalIcon, AchievementsIcon 
+} from './icons'
 
 const navSections = [
   {
     title: "Core Modules",
     items: [
-      { label: 'Dashboard', path: '/dashboard', icon: '📊' },
-      { label: 'Profile', path: '/profile', icon: '👤' },
-      { label: 'Skills Tracker', path: '/skills', icon: '⚡' },
-      { label: 'Readiness Score', path: '/readiness', icon: '📈' },
-      { label: 'Resume Review', path: '/resume', icon: '📄' },
-      { label: 'JD Matching', path: '/jd-analyzer', icon: '🔍' },
-      { label: 'Job Tracker', path: '/applications', icon: '💼' },
+      { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+      { label: 'Profile', path: '/profile', icon: <ProfileIcon /> },
+      { label: 'Skills Tracker', path: '/skills', icon: <SkillsIcon /> },
+      { label: 'Readiness Score', path: '/readiness', icon: <ReadinessIcon /> },
+      { label: 'Resume Review', path: '/resume', icon: <ResumeIcon /> },
+      { label: 'JD Matching', path: '/jd-analyzer', icon: <JdMatchingIcon /> },
+      { label: 'Job Tracker', path: '/applications', icon: <JobTrackerIcon /> },
     ]
   },
   {
     title: "AI & Practice",
     items: [
-      { label: 'AI Advisor', path: '/advisor', icon: '✨', isAi: true },
-      { label: 'AI Mock Coach', path: '/mock-interview', icon: '🤖', isAi: true },
-      { label: 'Interview Qs', path: '/interview', icon: '🎙️' },
-      { label: 'Aptitude Test', path: '/aptitude', icon: '🧩' },
+      { label: 'AI Advisor', path: '/advisor', icon: <AiAdvisorIcon />, isAi: true },
+      { label: 'AI Mock Coach', path: '/mock-interview', icon: <AiMockCoachIcon />, isAi: true },
+      { label: 'Interview Qs', path: '/interview', icon: <InterviewQsIcon /> },
+      { label: 'Aptitude Test', path: '/aptitude', icon: <AptitudeIcon /> },
     ]
   },
   {
     title: "Placement Guides",
     items: [
-      { label: 'Roadmaps', path: '/roadmaps', icon: '🗺️' },
-      { label: 'Company Prep', path: '/company-prep', icon: '🏢' },
-      { label: 'Salary Insights', path: '/salary-insights', icon: '💰' },
-      { label: 'Certifications', path: '/certifications', icon: '🎓' },
-      { label: 'Resource Hub', path: '/resources', icon: '📚' },
-      { label: 'Video Guides', path: '/videos', icon: '🎬' },
+      { label: 'Roadmaps', path: '/roadmaps', icon: <RoadmapsIcon /> },
+      { label: 'Company Prep', path: '/company-prep', icon: <CompanyPrepIcon /> },
+      { label: 'Salary Insights', path: '/salary-insights', icon: <SalaryIcon /> },
+      { label: 'Certifications', path: '/certifications', icon: <CertificationsIcon /> },
+      { label: 'Resource Hub', path: '/resources', icon: <ResourceHubIcon /> },
+      { label: 'Video Guides', path: '/videos', icon: <VideoGuidesIcon /> },
     ]
   },
   {
     title: "Productivity",
     items: [
-      { label: 'Planner Tasks', path: '/planner', icon: '📅' },
-      { label: 'SMART Goals', path: '/goals', icon: '🎯' },
-      { label: 'Focus Pomodoro', path: '/pomodoro', icon: '⏱️' },
-      { label: 'Placement Journal', path: '/journal', icon: '📝' },
-      { label: 'Achievements', path: '/achievements', icon: '🏆' },
+      { label: 'Planner Tasks', path: '/planner', icon: <PlannerIcon /> },
+      { label: 'SMART Goals', path: '/goals', icon: <GoalsIcon /> },
+      { label: 'Focus Pomodoro', path: '/pomodoro', icon: <PomodoroIcon /> },
+      { label: 'Placement Journal', path: '/journal', icon: <JournalIcon /> },
+      { label: 'Achievements', path: '/achievements', icon: <AchievementsIcon /> },
     ]
   }
 ]
@@ -67,9 +75,9 @@ export default function AppShell({ title, subtitle, actions, children, maxWidth 
         <button onClick={() => { navigate('/'); setOpen(false) }} className="flex items-center gap-3 group">
           <div 
             style={{ fontFamily: "'Instrument Serif', serif" }}
-            className="text-2xl tracking-tight text-white cursor-pointer select-none"
+            className="text-2xl tracking-tight text-white cursor-pointer select-none font-bold"
           >
-            Velorah<sup className="text-xs">®</sup>
+            AI Career OS
           </div>
         </button>
       </div>
@@ -91,7 +99,7 @@ export default function AppShell({ title, subtitle, actions, children, maxWidth 
                     `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group ${
                       isActive
                         ? 'bg-white/10 text-white shadow-sm border border-white/10'
-                        : 'text-gray-400 hover:text-gray-250 hover:bg-white/[0.02]'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.02]'
                     }`
                   }
                 >
@@ -163,7 +171,7 @@ export default function AppShell({ title, subtitle, actions, children, maxWidth 
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <span className="font-bold text-sm gradient-text">Velorah</span>
+          <span className="font-bold text-sm gradient-text">AI Career OS</span>
         </header>
 
         <main className={`flex-1 ${maxWidth} mx-auto w-full px-4 md:px-8 py-6 md:py-10`}>
