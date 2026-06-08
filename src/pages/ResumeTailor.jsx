@@ -16,7 +16,7 @@ export default function ResumeTailor() {
 
   const handleGenerate = async () => {
     if (!resumeText.trim() || !jobDescription.trim()) {
-      toast.show('Please provide both your resume details and the target Job Description.', 'warning')
+      toast.warning('Please provide both your resume details and the target Job Description.')
       return
     }
 
@@ -61,9 +61,9 @@ Ensure you start each section with the exact headers: [TAILORED BULLETS], [COVER
       setCoverLetter(coverPart || 'Error generating cover letter. Try again.')
       setOutreach(outreachPart || 'Error generating outreach draft. Try again.')
       
-      toast.show('AI tailored your profile successfully! Check the results.', 'success')
+      toast.success('AI tailored your profile successfully! Check the results.')
     } catch (err) {
-      toast.show('Generation failed: ' + err.message, 'error')
+      toast.error('Generation failed: ' + err.message)
     } finally {
       setLoading(false)
     }
@@ -71,7 +71,7 @@ Ensure you start each section with the exact headers: [TAILORED BULLETS], [COVER
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text)
-    toast.show('Copied to clipboard!', 'success')
+    toast.success('Copied to clipboard!')
   }
 
   return (

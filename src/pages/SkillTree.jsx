@@ -85,7 +85,7 @@ export default function SkillTree() {
     // Check if locked
     const isLocked = node.id > 1 && !completedNodeIds.includes(node.id - 1)
     if (isLocked) {
-      toast.show('This node is locked. Please complete the previous node first!', 'warning')
+      toast.warning('This node is locked. Please complete the previous node first!')
       return
     }
     setActiveNode(node)
@@ -102,7 +102,7 @@ export default function SkillTree() {
   const submitQuiz = () => {
     const qCount = activeNode.quiz.length
     if (Object.keys(answers).length < qCount) {
-      toast.show('Please answer all questions before submitting.', 'warning')
+      toast.warning('Please answer all questions before submitting.')
       return
     }
 
@@ -115,14 +115,14 @@ export default function SkillTree() {
     setQuizSuccess(correct)
 
     if (correct) {
-      toast.show('All answers correct! Node unlocked! 🎉', 'success')
+      toast.success('All answers correct! Node unlocked! 🎉')
       if (!completedNodeIds.includes(activeNode.id)) {
         const updated = [...completedNodeIds, activeNode.id]
         setCompletedNodeIds(updated)
         writeUserData(user.id, 'completedSkillNodes', updated)
       }
     } else {
-      toast.show('Some answers were incorrect. Review and try again!', 'error')
+      toast.error('Some answers were incorrect. Review and try again!')
     }
   }
 

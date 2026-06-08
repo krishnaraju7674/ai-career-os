@@ -71,7 +71,7 @@ export default function MockInterviewer() {
           // Command: "clear input" / "clear answer" / "reset input"
           if (cleanLower.endsWith('clear input') || cleanLower.endsWith('clear answer') || cleanLower.endsWith('reset input')) {
             setCurrentInput('')
-            toast.show('Input cleared by voice command', 'info')
+            toast.info('Input cleared by voice command')
             return
           }
 
@@ -81,7 +81,7 @@ export default function MockInterviewer() {
             setCurrentInput(finalTxt)
             rec.stop()
             setIsListening(false)
-            toast.show('Voice input paused by voice command', 'info')
+            toast.info('Voice input paused by voice command')
             return
           }
 
@@ -94,7 +94,7 @@ export default function MockInterviewer() {
               if (finalTxt) {
                 submitAnswerRef.current?.(finalTxt)
               } else {
-                toast.show('Cannot submit empty answer.', 'warning')
+                toast.warning('Cannot submit empty answer.')
               }
               return
             }
@@ -117,7 +117,7 @@ export default function MockInterviewer() {
 
   const toggleListening = () => {
     if (!speechSupported) {
-      toast.show('Speech recognition is not supported in this browser.', 'warning')
+      toast.warning('Speech recognition is not supported in this browser.')
       return
     }
 
@@ -181,7 +181,7 @@ Do not write out the entire interview, and do not provide the answer. Wait for t
       setHistory([{ role: 'model', text: reply }])
       setQStartTime(Date.now())
     } catch (err) {
-      toast.show('Error initiating interview: ' + err.message, 'error')
+      toast.error('Error initiating interview: ' + err.message)
       setIsStarted(false)
     } finally {
       setLoading(false)
@@ -281,7 +281,7 @@ Do not write out the entire interview, and do not provide the answer. Wait for t
         setIsFinished(true)
       }
     } catch (err) {
-      toast.show('Failed to submit answer: ' + err.message, 'error')
+      toast.error('Failed to submit answer: ' + err.message)
     } finally {
       setLoading(false)
     }

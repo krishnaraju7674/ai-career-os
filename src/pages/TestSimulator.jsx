@@ -178,7 +178,7 @@ export default function TestSimulator() {
     setTimeLeft(600)
     setCheatWarnings(0)
     setShowCheatWarningModal(false)
-    toast.show('Exam simulator started. Do not switch tabs!', 'success')
+    toast.success('Exam simulator started. Do not switch tabs!')
   }
 
   const handleSelectOption = (optIdx) => {
@@ -188,7 +188,7 @@ export default function TestSimulator() {
   const handleAutoSubmit = (reason) => {
     clearInterval(timerIntervalRef.current)
     setIsFinished(true)
-    toast.show(`Test Submitted: ${reason}`, 'warning')
+    toast.warning(`Test Submitted: ${reason}`)
   }
 
   const submitTest = () => {
@@ -200,7 +200,7 @@ export default function TestSimulator() {
     }
     clearInterval(timerIntervalRef.current)
     setIsFinished(true)
-    toast.show('Test submitted successfully!', 'success')
+    toast.success('Test submitted successfully!')
   }
 
   // Formatting remaining time
