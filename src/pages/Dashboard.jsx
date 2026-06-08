@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../components/AppShell'
-import { Panel, ProgressRing, StatCard, StatusBadge } from '../components/ui'
+import { Panel, ProgressRing, StatCard, StatusBadge, Card3D } from '../components/ui'
 import { useAuth } from '../context/useAuth'
 import { readUserData } from '../services/localUserData'
 import { supabase } from '../services/supabaseClient'
@@ -16,14 +16,26 @@ function lastNDays(n) {
 }
 
 const moduleCards = [
-  { title: 'Skills', desc: 'Rate your tech stack', path: '/skills', color: 'from-blue-500/20 to-cyan-500/20 border-blue-500/20', icon: '⚡' },
-  { title: 'Readiness', desc: 'Your placement score', path: '/readiness', color: 'from-indigo-500/20 to-purple-500/20 border-indigo-500/20', icon: '📊' },
-  { title: 'Resume', desc: 'ATS feedback instantly', path: '/resume', color: 'from-violet-500/20 to-pink-500/20 border-violet-500/20', icon: '📄' },
-  { title: 'Planner', desc: 'Turn gaps into tasks', path: '/planner', color: 'from-green-500/20 to-emerald-500/20 border-green-500/20', icon: '📅' },
-  { title: 'Applications', desc: 'Track every job', path: '/applications', color: 'from-yellow-500/20 to-orange-500/20 border-yellow-500/20', icon: '💼' },
-  { title: 'Mock Interview', desc: 'Practice & score yourself', path: '/interview', color: 'from-red-500/20 to-rose-500/20 border-red-500/20', icon: '🎙️' },
-  { title: 'AI Advisor', desc: 'Chat with your mentor', path: '/advisor', color: 'from-purple-500/20 to-violet-500/20 border-purple-500/20', icon: '✨' },
-  { title: 'JD Analyzer', desc: 'Match job descriptions', path: '/jd-analyzer', color: 'from-teal-500/20 to-cyan-500/20 border-teal-500/20', icon: '🔍' },
+  { title: 'Skills Tracker', desc: 'Rate your tech stack', path: '/skills', color: 'from-cyan-500/10 to-blue-500/10 border-cyan-500/20 hover:border-cyan-500/35', icon: '⚡' },
+  { title: 'Readiness Score', desc: 'Placement probability', path: '/readiness', color: 'from-blue-500/10 to-violet-500/10 border-blue-500/20 hover:border-blue-500/35', icon: '📊' },
+  { title: 'Resume Review', desc: 'ATS feedback instantly', path: '/resume', color: 'from-violet-500/10 to-pink-500/10 border-violet-500/20 hover:border-violet-500/35', icon: '📄' },
+  { title: 'JD Matching', desc: 'Compare profiles vs JD', path: '/jd-analyzer', color: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20 hover:border-emerald-500/35', icon: '🔍' },
+  { title: 'AI Placement Advisor', desc: 'Chat with Gemini mentor', path: '/advisor', color: 'from-pink-500/10 to-purple-500/10 border-pink-500/20 hover:border-pink-500/35', icon: '✨' },
+  { title: 'AI Mock Interview', desc: 'Grades answers live', path: '/mock-interview', color: 'from-amber-500/10 to-orange-500/10 border-amber-500/20 hover:border-amber-500/35', icon: '🤖' },
+  { title: 'Interview Qs', desc: 'Technical & HR practice', path: '/interview', color: 'from-red-500/10 to-rose-500/10 border-red-500/20 hover:border-red-500/35', icon: '🎙️' },
+  { title: 'Aptitude Test', desc: 'Verbal & Quantitative', path: '/aptitude', color: 'from-teal-500/10 to-cyan-500/10 border-teal-500/20 hover:border-teal-500/35', icon: '🧩' },
+  { title: 'Career Roadmaps', desc: 'Specialization guides', path: '/roadmaps', color: 'from-blue-500/10 to-indigo-500/10 border-blue-500/20 hover:border-blue-500/35', icon: '🗺️' },
+  { title: 'Company Prep', desc: 'Rounds & cracking tips', path: '/company-prep', color: 'from-violet-500/10 to-purple-500/10 border-violet-500/20 hover:border-violet-500/35', icon: '🏢' },
+  { title: 'Salary & CTC', desc: 'Hub wise stats', path: '/salary-insights', color: 'from-emerald-500/10 to-green-500/10 border-emerald-500/20 hover:border-emerald-500/35', icon: '💰' },
+  { title: 'Certifications', desc: 'Recommended credentials', path: '/certifications', color: 'from-cyan-500/10 to-blue-500/10 border-cyan-500/20 hover:border-cyan-500/35', icon: '🎓' },
+  { title: 'Resource Hub', desc: '200+ curated links', path: '/resources', color: 'from-rose-500/10 to-pink-500/10 border-rose-500/20 hover:border-rose-500/35', icon: '📚' },
+  { title: 'Video Guides', desc: 'Curated YouTube sheets', path: '/videos', color: 'from-orange-500/10 to-amber-500/10 border-orange-500/20 hover:border-orange-500/35', icon: '🎬' },
+  { title: 'Focus Pomodoro', desc: 'Productive study clock', path: '/pomodoro', color: 'from-cyan-500/10 to-teal-500/10 border-cyan-500/20 hover:border-cyan-500/35', icon: '⏱️' },
+  { title: 'SMART Goals', desc: 'Configure milestones', path: '/goals', color: 'from-emerald-500/10 to-green-500/10 border-emerald-500/20 hover:border-emerald-500/35', icon: '🎯' },
+  { title: 'Placement Journal', desc: 'Reflect & log logs', path: '/journal', color: 'from-violet-500/10 to-purple-500/10 border-violet-500/20 hover:border-violet-500/35', icon: '📝' },
+  { title: 'Achievements', desc: 'Gamification badges', path: '/achievements', color: 'from-yellow-500/10 to-amber-500/10 border-yellow-500/20 hover:border-yellow-500/35', icon: '🏆' },
+  { title: 'Planner Task', desc: 'Track daily checklist', path: '/planner', color: 'from-green-500/10 to-emerald-500/10 border-green-500/20 hover:border-green-500/35', icon: '📅' },
+  { title: 'Job Tracker', desc: 'Kanban job pipeline', path: '/applications', color: 'from-indigo-500/10 to-violet-500/10 border-indigo-500/20 hover:border-indigo-500/35', icon: '💼' },
 ]
 
 export default function Dashboard() {
@@ -57,7 +69,7 @@ export default function Dashboard() {
 
   const local = useMemo(() => {
     const tasks = readUserData(user.id, 'plannerTasks', [])
-    const apps = readUserData(user.id, 'applications', [])
+    const apps = readUserData(user.id, 'jobApplications', []) // fixed to 'jobApplications'
     const sessions = readUserData(user.id, 'interviewSessions', [])
     const days = lastNDays(28)
     const completedDates = new Set(tasks.filter(t => t.completed).map(t => t.dueDate))
@@ -101,7 +113,7 @@ export default function Dashboard() {
           </div>
           <button 
             onClick={() => navigate('/profile')} 
-            className="rounded-xl bg-indigo-500/10 border border-indigo-500/30 px-4 py-1.5 text-xs font-bold text-indigo-300 transition-all hover:bg-indigo-500/20 hover:border-indigo-500/50 active:scale-95"
+            className="rounded-xl bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 transition-all hover:bg-cyan-500/20 hover:border-cyan-500/50 active:scale-95 cursor-pointer"
           >
             Change Role
           </button>
@@ -119,7 +131,7 @@ export default function Dashboard() {
               <p className="text-xs text-gray-500">Readiness</p>
             </div>
           </div>
-          <p className="text-xs text-gray-500 text-center">Overall placement score</p>
+          <p className="text-xs text-gray-500 text-center font-medium">Overall placement score</p>
         </div>
 
         {/* Stat cards */}
@@ -128,14 +140,14 @@ export default function Dashboard() {
             <StatCard label="Skills Saved" value={summary.skillsCount} color="blue" delay="delay-100" />
             <button 
               onClick={() => navigate('/skills')}
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-500/20 hover:bg-blue-500/40 text-[10px] font-bold text-blue-200 px-2 py-1 rounded-md border border-blue-500/30"
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-cyan-500/20 hover:bg-cyan-500/40 text-[10px] font-bold text-cyan-200 px-2 py-1 rounded-md border border-cyan-500/30 cursor-pointer"
             >
               Edit
             </button>
           </div>
-          <StatCard label="Resume Score" value={summary.resumeScore ?? 0} suffix="%" color="indigo" delay="delay-200" />
+          <StatCard label="Resume Score" value={summary.resumeScore ?? 0} suffix="%" color="purple" delay="delay-200" />
           <StatCard label="Open Tasks" value={local.openTasks} color="yellow" delay="delay-300" />
-          <StatCard label="Applications" value={local.applications} color="green" delay="delay-400" />
+          <StatCard label="Applications" value={local.applications} color="emerald" delay="delay-400" />
         </div>
       </div>
 
@@ -143,18 +155,18 @@ export default function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Module cards */}
         <div>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Modules</h2>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Core & Career Guidance Modules</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             {moduleCards.map((card, i) => (
               <button
                 key={card.path}
                 onClick={() => navigate(card.path)}
-                style={{ animationDelay: `${i * 50}ms` }}
-                className={`animate-fade-up text-left rounded-2xl bg-gradient-to-br border p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] ${card.color}`}
+                style={{ animationDelay: `${i * 30}ms` }}
+                className={`animate-fade-up text-left rounded-2xl bg-gradient-to-br border p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] cursor-pointer ${card.color}`}
               >
                 <span className="text-2xl mb-2 block">{card.icon}</span>
                 <p className="font-bold text-sm text-white">{card.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{card.desc}</p>
+                <p className="text-xs text-gray-400 mt-0.5 leading-snug">{card.desc}</p>
               </button>
             ))}
           </div>
@@ -174,7 +186,7 @@ export default function Dashboard() {
               {local.heatmap.map(({ date, active }) => (
                 <div
                   key={date} title={date}
-                  className={`aspect-square rounded-sm transition-all ${active ? 'bg-indigo-500 shadow-sm shadow-indigo-500/40' : 'bg-white/[0.04]'}`}
+                  className={`aspect-square rounded-sm transition-all ${active ? 'bg-cyan-500 shadow-sm shadow-cyan-500/40' : 'bg-white/[0.04]'}`}
                 />
               ))}
             </div>
@@ -188,11 +200,11 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {local.upcoming.map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 rounded-xl bg-white/[0.03] p-3">
+                  <div key={i} className="flex items-start gap-3 rounded-xl bg-white/[0.03] p-3 border border-white/[0.04]">
                     <StatusBadge tone={item.type === 'Application' ? 'yellow' : 'blue'}>{item.type}</StatusBadge>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-white truncate">{item.label}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{item.date}</p>
+                      <p className="text-xs font-semibold text-white truncate">{item.label}</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">{item.date}</p>
                     </div>
                   </div>
                 ))}
@@ -203,10 +215,10 @@ export default function Dashboard() {
           {/* Interview score */}
           <Panel className="animate-fade-up delay-400">
             <h2 className="font-bold text-sm mb-3">Interview Trend</h2>
-            <p className="text-5xl font-black text-indigo-400">
+            <p className="text-5xl font-black text-cyan-400">
               {local.interviewScore === null ? '—' : `${local.interviewScore}%`}
             </p>
-            <p className="text-xs text-gray-500 mt-1">Latest mock interview score</p>
+            <p className="text-xs text-gray-500 mt-1 font-medium">Latest mock interview score</p>
           </Panel>
         </div>
       </div>
