@@ -30,6 +30,7 @@ export default function MockInterviewer() {
   const [isListening, setIsListening] = useState(false)
   const [speechSupported, setSpeechSupported] = useState(false)
   const recognitionRef = useRef(null)
+  const submitAnswerRef = useRef(null)
 
   // Analytics states
   const [qStartTime, setQStartTime] = useState(null)
@@ -37,6 +38,11 @@ export default function MockInterviewer() {
   const [totalTimeMs, setTotalTimeMs] = useState(0)
   const [fillerCount, setFillerCount] = useState(0)
   const [pacingWpm, setPacingWpm] = useState(0)
+
+  // Keep ref up-to-date to avoid stale closures in event listeners
+  useEffect(() => {
+    submitAnswerRef.current = submitAnswer
+  })
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -49,10 +55,51 @@ export default function MockInterviewer() {
 
       rec.onresult = (e) => {
         let transcript = ''
+        let isFinalResult = false
         for (let i = e.resultIndex; i < e.results.length; i++) {
           transcript += e.results[i][0].transcript
+          if (e.results[i].isFinal) {
+            isFinalResult = true
+          }
         }
         setCurrentInput(transcript)
+
+        // Parse voice commands on final result boundaries
+        if (isFinalResult) {
+          const cleanLower = transcript.trim().toLowerCase()
+
+          // Command: "clear input" / "clear answer" / "reset input"
+          if (cleanLower.endsWith('clear input') || cleanLower.endsWith('clear answer') || cleanLower.endsWith('reset input')) {
+            setCurrentInput('')
+            toast.show('Input cleared by voice command', 'info')
+            return
+          }
+
+          // Command: "stop listening" / "stop recording"
+          if (cleanLower.endsWith('stop listening') || cleanLower.endsWith('stop recording')) {
+            const finalTxt = transcript.substring(0, transcript.length - 14).trim()
+            setCurrentInput(finalTxt)
+            rec.stop()
+            setIsListening(false)
+            toast.show('Voice input paused by voice command', 'info')
+            return
+          }
+
+          // Command: "submit answer" / "send answer" / "send reply" / "finish answer"
+          const submitPhrases = ['submit answer', 'send answer', 'send reply', 'finish answer']
+          for (const phrase of submitPhrases) {
+            if (cleanLower.endsWith(phrase)) {
+              const finalTxt = transcript.substring(0, transcript.length - phrase.length).trim()
+              setCurrentInput('')
+              if (finalTxt) {
+                submitAnswerRef.current?.(finalTxt)
+              } else {
+                toast.show('Cannot submit empty answer.', 'warning')
+              }
+              return
+            }
+          }
+        }
       }
 
       rec.onerror = (err) => {
@@ -142,9 +189,10 @@ Do not write out the entire interview, and do not provide the answer. Wait for t
   }
 
   // Handle user response submission
-  const submitAnswer = async () => {
-    if (!currentInput.trim()) return
-    const userAns = currentInput
+  const submitAnswer = async (forcedText = null) => {
+    const textToSubmit = (typeof forcedText === 'string') ? forcedText : currentInput
+    if (!textToSubmit.trim()) return
+    const userAns = textToSubmit
     setCurrentInput('')
 
     if (isListening) {
