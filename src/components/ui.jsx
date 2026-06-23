@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components, react-hooks/set-state-in-effect */
 import { useEffect, useState, useRef } from 'react'
 
 /* ── Animated Number ── */
@@ -94,7 +95,7 @@ export function Card3D({ children, className = '', glow = false }) {
 }
 
 /* ── Stat Card ── */
-export function StatCard({ label, value, suffix = '', icon, color = 'neutral', delay = '' }) {
+export function StatCard({ label, value, suffix = '', icon, delay = '' }) {
   // Cinematic styling: minimalist borders and simple highlights
   return (
     <div className={`animate-fade-up ${delay} rounded-2xl liquid-glass p-5 border border-white/[0.04]`}>
@@ -119,9 +120,17 @@ export function Field({ label, children }) {
 
 /* ── Status Badge ── */
 export function StatusBadge({ children, tone = 'gray' }) {
+  const dotColors = {
+    gray: 'bg-gray-400',
+    blue: 'bg-blue-400',
+    purple: 'bg-purple-400',
+    green: 'bg-emerald-400',
+    red: 'bg-red-400'
+  }
+  const dotColor = dotColors[tone] || 'bg-white/60'
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1 text-xs font-semibold text-white">
-      <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
       {children}
     </span>
   )

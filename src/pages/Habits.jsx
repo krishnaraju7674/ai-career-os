@@ -44,7 +44,21 @@ export default function Habits() {
         .gte('log_date', since)
         .eq('done', true)
 
-      if (error) { toast.error('Failed to load habits.'); setLoading(false); return }
+      if (error) {
+        console.warn('Failed to load habits from Supabase, trying localStorage:', error)
+        try {
+          const cached = localStorage.getItem(`habits_${user.id}`)
+          if (cached) {
+            const { todayDone: cToday, heatmapData: cHeatmap } = JSON.parse(cached)
+            if (cToday) setTodayDone(cToday)
+            if (cHeatmap) setHeatmapData(cHeatmap)
+          }
+        } catch (e) {
+          console.error('Failed to parse local habits cache:', e)
+        }
+        setLoading(false)
+        return
+      }
 
       const todayMap = {}
       const heatmap = {}
@@ -62,6 +76,16 @@ export default function Habits() {
     }
     fetch()
   }, [user.id, today])
+
+  useEffect(() => {
+    if (!loading && user?.id) {
+      try {
+        localStorage.setItem(`habits_${user.id}`, JSON.stringify({ todayDone, heatmapData }))
+      } catch (e) {
+        console.error('Failed to save habits to localStorage:', e)
+      }
+    }
+  }, [todayDone, heatmapData, loading, user?.id])
 
   const toggle = async (id) => {
     const done = !!todayDone[id]
@@ -98,7 +122,7 @@ export default function Habits() {
   const completedToday = HABITS.filter(h => todayDone[h.id]).length
   const dailyScore = Math.round((completedToday / HABITS.length) * 100)
 
-  const days = lastNDays(28)
+  const days = useMemo(() => lastNDays(28), [])
 
   const streak = useMemo(() => {
     let s = 0
@@ -107,6 +131,7 @@ export default function Habits() {
       else if (days[i] !== today) break
     }
     return s
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
   }, [heatmapData, days, today])
 
   const scoreColor = (p) => p >= 70 ? 'text-green-400' : p >= 40 ? 'text-yellow-400' : 'text-red-400'

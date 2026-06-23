@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import AppShell from '../components/AppShell'
 import { primaryButtonClass } from '../components/ui'
 import { useAuth } from '../context/useAuth'
@@ -41,7 +41,7 @@ export default function Skills() {
   const addInputRef = useRef()
 
   /* ── Fetch ── */
-  const fetchSkillsData = async () => {
+  const fetchSkillsData = useCallback(async () => {
     const [{ data: skillsData }, { data: userSkillsData }] = await Promise.all([
       supabase.from('skills').select('*').order('skill_name'),
       supabase.from('user_skills').select('*').eq('user_id', user.id),
@@ -63,9 +63,14 @@ export default function Skills() {
       userSkillsData.forEach(s => { map[s.skill_id] = s.level })
       setUserSkills(map)
     }
-  }
+  }, [user.id])
 
-  useEffect(() => { fetchSkillsData() }, [user.id])
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchSkillsData()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [fetchSkillsData])
 
   /* ── Toggle category panel ── */
   const toggleCat = (cat) => setOpenCats(prev => ({ ...prev, [cat]: !prev[cat] }))

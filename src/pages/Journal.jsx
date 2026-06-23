@@ -1,57 +1,117 @@
 import { useState, useEffect } from 'react'
 import AppShell from '../components/AppShell'
-import { Panel, Card3D, StatusBadge, inputClass, primaryButtonClass, secondaryButtonClass } from '../components/ui'
+import { Panel, Card3D, StatusBadge, inputClass, primaryButtonClass } from '../components/ui'
+import { supabase } from '../services/supabaseClient'
+import { useAuth } from '../context/useAuth'
+import { useToast } from '../context/ToastContext'
 
 export default function Journal() {
+  const { user } = useAuth()
+  const toast = useToast()
   const [entries, setEntries] = useState([])
+  const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
   const [mood, setMood] = useState('🔥')
   const [tagsInput, setTagsInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    const saved = localStorage.getItem('career_journal')
-    if (saved) {
-      setEntries(JSON.parse(saved))
+    supabase
+      .from('career_journal')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn('Failed to load journal entries from Supabase, trying localStorage:', error)
+          try {
+            const cached = localStorage.getItem(`career_journal_${user.id}`)
+            if (cached) setEntries(JSON.parse(cached))
+          } catch (e) {
+            console.error('Failed to parse local journal entries cache:', e)
+          }
+        } else {
+          const mapped = (data || []).map(item => ({
+            id: item.id,
+            text: item.text,
+            mood: item.mood,
+            tags: item.tags,
+            date: new Date(item.created_at).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+            timestamp: new Date(item.created_at).getTime()
+          }))
+          setEntries(mapped)
+        }
+        setLoading(false)
+      })
+  }, [user.id])
+
+  useEffect(() => {
+    if (!loading && user?.id) {
+      try {
+        localStorage.setItem(`career_journal_${user.id}`, JSON.stringify(entries))
+      } catch (e) {
+        console.error('Failed to save journal entries to localStorage:', e)
+      }
     }
-  }, [])
+  }, [entries, loading, user?.id])
 
-  const saveEntries = (updated) => {
-    setEntries(updated)
-    localStorage.setItem('career_journal', JSON.stringify(updated))
-  }
-
-  const handleAddEntry = (e) => {
+  const handleAddEntry = async (e) => {
     e.preventDefault()
     if (!text.trim()) return
 
     const parsedTags = tagsInput
       .split(',')
-      .map(tag => tag.trim().replace(/^#/, '')) // Strip leading hashes if typed
+      .map(tag => tag.trim().replace(/^#/, ''))
       .filter(Boolean)
       .map(tag => `#${tag}`)
 
-    const newEntry = {
-      id: Date.now().toString(),
-      text,
-      mood,
-      tags: parsedTags.length > 0 ? parsedTags : ['#general'],
-      date: new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-      timestamp: Date.now()
+    const tags = parsedTags.length > 0 ? parsedTags : ['#general']
+
+    const { data, error } = await supabase
+      .from('career_journal')
+      .insert({
+        user_id: user.id,
+        text,
+        mood,
+        tags
+      })
+      .select()
+      .single()
+
+    if (error) {
+      toast.error('Failed to save reflection.')
+      return
     }
 
-    const updated = [newEntry, ...entries]
-    saveEntries(updated)
-    
-    // Reset inputs
+    const newEntry = {
+      id: data.id,
+      text: data.text,
+      mood: data.mood,
+      tags: data.tags,
+      date: new Date(data.created_at).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+      timestamp: new Date(data.created_at).getTime()
+    }
+
+    setEntries(prev => [newEntry, ...prev])
     setText('')
-    setMood('🔥')
     setTagsInput('')
+    setMood('🔥')
+    toast.success('Reflection logged! Keep it up. ✓')
   }
 
-  const handleDeleteEntry = (id) => {
-    const updated = entries.filter(ent => ent.id !== id)
-    saveEntries(updated)
+  const handleDeleteEntry = async (id) => {
+    const { error } = await supabase
+      .from('career_journal')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      toast.error('Failed to delete entry.')
+      return
+    }
+
+    setEntries(prev => prev.filter(ent => ent.id !== id))
+    toast.success('Journal entry removed.')
   }
 
   const filteredEntries = entries.filter(ent => {
@@ -60,31 +120,29 @@ export default function Journal() {
     return matchesSearch
   })
 
-  // Compute stats
   const totalLogs = entries.length
-  
-  // Basic streak computation
-  const getStreak = () => {
-    if (entries.length === 0) return 0
-    let streak = 0
-    let lastTime = Date.now()
-    
-    // Sort entries by timestamp descending
-    const sorted = [...entries].sort((a, b) => b.timestamp - a.timestamp)
-    
-    for (let i = 0; i < sorted.length; i++) {
-      const diffDays = Math.floor((lastTime - sorted[i].timestamp) / (1000 * 60 * 60 * 24))
-      if (diffDays <= 1) {
-        streak++
-        lastTime = sorted[i].timestamp
-      } else {
-        break
+  const [streak, setStreak] = useState(0)
+
+  useEffect(() => {
+    let streakCount = 0
+    if (entries.length > 0) {
+      let lastTime = Date.now()
+      const sorted = [...entries].sort((a, b) => b.timestamp - a.timestamp)
+      for (let i = 0; i < sorted.length; i++) {
+        const diffDays = Math.floor((lastTime - sorted[i].timestamp) / (1000 * 60 * 60 * 24))
+        if (diffDays <= 1) {
+          streakCount++
+          lastTime = sorted[i].timestamp
+        } else {
+          break
+        }
       }
     }
-    return streak
-  }
-
-  const currentStreak = getStreak()
+    const timer = setTimeout(() => {
+      setStreak(streakCount)
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [entries])
 
   return (
     <AppShell title="Placement Journal & Log" subtitle="Reflect on your daily learning, log interviews, and track your mood.">
@@ -95,7 +153,7 @@ export default function Journal() {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/[0.01] border border-white/[0.04] p-4 rounded-2xl">
             <div className="flex items-center gap-4 text-sm font-bold text-gray-400">
               <span>Total Logs: {totalLogs}</span>
-              <span>Streak: {currentStreak} 🔥</span>
+              <span>Streak: {streak} 🔥</span>
             </div>
             
             <div className="relative w-full sm:w-64">
@@ -109,7 +167,13 @@ export default function Journal() {
             </div>
           </div>
 
-          {filteredEntries.length === 0 ? (
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-32 shimmer rounded-xl" />
+              ))}
+            </div>
+          ) : filteredEntries.length === 0 ? (
             <div className="text-center py-20 bg-white/[0.02] border border-white/[0.04] rounded-2xl">
               <p className="text-gray-500">No journal logs found. Write your first reflection on the right!</p>
             </div>

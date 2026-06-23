@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import AppShell from '../components/AppShell'
-import { Panel, inputClass, primaryButtonClass, secondaryButtonClass } from '../components/ui'
+import { Panel, inputClass, primaryButtonClass } from '../components/ui'
 import { useAuth } from '../context/useAuth'
-import { readUserData, writeUserData } from '../services/localUserData'
 import { supabase } from '../services/supabaseClient'
 import { useToast } from '../context/ToastContext'
 
@@ -70,7 +69,7 @@ async function sendToAI(modelId, context, history, message) {
 export default function Advisor() {
   const { user } = useAuth()
   const toast = useToast()
-  const [messages, setMessages] = useState(() => readUserData(user.id, 'advisorChat', []))
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [context, setContext] = useState('')
@@ -82,6 +81,35 @@ export default function Advisor() {
   const bottomRef = useRef(null)
 
   useEffect(() => { fetchUserContext(user.id).then(setContext) }, [user.id])
+  
+  useEffect(() => {
+    supabase
+      .from('chat_messages')
+      .select('role, content, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(40)
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn('Failed to load chat history from Supabase, loading from local cache:', error)
+          try {
+            const cached = localStorage.getItem(`advisor_chat_${user.id}`)
+            if (cached) setMessages(JSON.parse(cached))
+          } catch (e) {
+            console.error('Failed to parse local chat history cache:', e)
+          }
+        } else if (data) {
+          const loaded = data.map(m => ({ role: m.role, text: m.content }))
+          setMessages(loaded)
+          try {
+            localStorage.setItem(`advisor_chat_${user.id}`, JSON.stringify(loaded))
+          } catch (e) {
+            console.error('Failed to cache chat history to local storage:', e)
+          }
+        }
+      })
+  }, [user.id])
+
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
   useEffect(() => () => clearInterval(timerRef.current), [])
 
@@ -114,9 +142,24 @@ export default function Advisor() {
 
     try {
       const reply = await sendToAI(modelId, context, messages, msg)
-      const updated = [...prev, { role: 'assistant', text: reply }]
-      setMessages(updated)
-      writeUserData(user.id, 'advisorChat', updated.slice(-40))
+      
+      const { error } = await supabase.from('chat_messages').insert([
+        { user_id: user.id, role: 'user', content: msg },
+        { user_id: user.id, role: 'assistant', content: reply }
+      ])
+      
+      const newMessages = [...prev, { role: 'assistant', text: reply }]
+      setMessages(newMessages)
+      
+      try {
+        localStorage.setItem(`advisor_chat_${user.id}`, JSON.stringify(newMessages))
+      } catch (e) {
+        console.error('Failed to save chat history to local storage:', e)
+      }
+
+      if (error) {
+        console.warn('Failed to sync chat history to cloud:', error)
+      }
     } catch (e) {
       if (e.message.startsWith('RATE_LIMIT:')) {
         const secs = parseInt(e.message.split(':')[1]) || 60
@@ -131,9 +174,23 @@ export default function Advisor() {
     }
   }
 
-  const reset = () => {
+  const reset = async () => {
+    const { error } = await supabase
+      .from('chat_messages')
+      .delete()
+      .eq('user_id', user.id)
+
+    try {
+      localStorage.removeItem(`advisor_chat_${user.id}`)
+    } catch (e) {
+      console.error('Failed to remove local chat history:', e)
+    }
+
+    if (error) {
+      console.warn('Failed to clear chat history in cloud:', error)
+    }
+
     setMessages([])
-    writeUserData(user.id, 'advisorChat', [])
     setError('')
     setCountdown(0)
     clearInterval(timerRef.current)

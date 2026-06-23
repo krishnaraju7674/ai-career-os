@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../components/AppShell'
-import { Panel, secondaryButtonClass } from '../components/ui'
+import { Panel } from '../components/ui'
 import { useAuth } from '../context/useAuth'
 import { supabase } from '../services/supabaseClient'
 

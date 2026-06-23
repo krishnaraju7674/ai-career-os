@@ -511,3 +511,125 @@ create policy "Resume delete for owner"
     bucket_id = 'resumes'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+
+-- ── 12. ADDITIONAL MODULE TABLES ──────────────────────────────
+
+create table if not exists career_goals (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  title text not null,
+  description text,
+  target_date date,
+  category text,
+  priority text,
+  progress int default 0,
+  completed boolean default false,
+  sub_goals jsonb default '[]'::jsonb,
+  created_at timestamp default now()
+);
+
+create table if not exists career_journal (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  text text not null,
+  mood text not null,
+  tags text[] default array[]::text[],
+  created_at timestamp default now()
+);
+
+create table if not exists pomodoro_sessions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  session_date date not null,
+  sessions_completed int default 0,
+  minutes_focused int default 0,
+  unique(user_id, session_date)
+);
+
+create table if not exists chat_messages (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  role text not null,
+  content text not null,
+  created_at timestamp default now()
+);
+
+create table if not exists interview_sessions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  role text,
+  score int,
+  session_type text check (session_type in ('technical', 'mock', 'hr', 'gd')),
+  difficulty text,
+  pacing_wpm int,
+  filler_count int,
+  total_questions int,
+  answered_count int,
+  created_at timestamp default now()
+);
+
+create table if not exists completed_skill_nodes (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  node_id int not null,
+  completed_at timestamp default now(),
+  unique(user_id, node_id)
+);
+
+create table if not exists test_submissions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  score int not null,
+  correct_count int not null,
+  total_questions int not null,
+  cheat_warnings int not null,
+  submitted_at timestamp default now()
+);
+
+
+-- ── 13. ADDITIONAL MODULE POLICIES ────────────────────────────
+
+alter table career_goals enable row level security;
+alter table career_journal enable row level security;
+alter table pomodoro_sessions enable row level security;
+alter table chat_messages enable row level security;
+alter table interview_sessions enable row level security;
+alter table completed_skill_nodes enable row level security;
+alter table test_submissions enable row level security;
+
+-- career_goals policies
+drop policy if exists "Users can manage own goals" on career_goals;
+create policy "Users can manage own goals" on career_goals
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- career_journal policies
+drop policy if exists "Users can manage own journal" on career_journal;
+create policy "Users can manage own journal" on career_journal
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- pomodoro_sessions policies
+drop policy if exists "Users can manage own pomodoro_sessions" on pomodoro_sessions;
+create policy "Users can manage own pomodoro_sessions" on pomodoro_sessions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- chat_messages policies
+drop policy if exists "Users can manage own chat_messages" on chat_messages;
+create policy "Users can manage own chat_messages" on chat_messages
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- interview_sessions policies
+drop policy if exists "Users can manage own interview_sessions" on interview_sessions;
+create policy "Users can manage own interview_sessions" on interview_sessions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- completed_skill_nodes policies
+drop policy if exists "Users can manage own completed_skill_nodes" on completed_skill_nodes;
+create policy "Users can manage own completed_skill_nodes" on completed_skill_nodes
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- test_submissions policies
+drop policy if exists "Users can manage own test_submissions" on test_submissions;
+create policy "Users can manage own test_submissions" on test_submissions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+

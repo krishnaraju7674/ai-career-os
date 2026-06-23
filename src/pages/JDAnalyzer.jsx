@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import AppShell from '../components/AppShell'
 import { Panel, StatusBadge, inputClass, primaryButtonClass, secondaryButtonClass } from '../components/ui'
 import { useAuth } from '../context/useAuth'
 import { supabase } from '../services/supabaseClient'
+import { useToast } from '../context/ToastContext'
 
 const SKILL_KEYWORDS = [
   'javascript', 'react', 'node', 'express', 'sql', 'python', 'java', 'html', 'css', 'git',
@@ -34,10 +35,12 @@ function extractFromJD(text) {
 
 export default function JDAnalyzer() {
   const { user } = useAuth()
+  const toast = useToast()
   const [jdText, setJdText] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [result, setResult] = useState(null)
   const [userSkillNames, setUserSkillNames] = useState([])
+  const [matchMode, setMatchMode] = useState('ai') // 'ai' | 'local'
 
   useEffect(() => {
     supabase
@@ -49,17 +52,116 @@ export default function JDAnalyzer() {
       })
   }, [user.id])
 
-  const analyze = () => {
+  const analyze = async () => {
     if (!jdText.trim()) return
     setAnalyzing(true)
-    setTimeout(() => {
+
+    if (matchMode === 'local') {
+      setTimeout(() => {
+        const { found, exp, degree, roleType } = extractFromJD(jdText)
+        const matched = found.filter(k => userSkillNames.some(u => u.includes(k) || k.includes(u)))
+        const missing = found.filter(k => !matched.includes(k))
+        const matchPct = found.length === 0 ? 0 : Math.round((matched.length / found.length) * 100)
+        setResult({
+          found,
+          matched,
+          missing,
+          matchPct,
+          exp,
+          degree,
+          roleType,
+          suggestions: missing.map(k => `Learn ${k} — add it to your Planner as a weekly goal.`),
+          wordCount: jdText.split(/\s+/).length
+        })
+        setAnalyzing(false)
+      }, 800)
+      return
+    }
+
+    // AI matching mode
+    try {
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modelId: 'gemini-2.0-flash',
+          contents: [
+            {
+              role: 'user',
+              parts: [{
+                text: `You are an expert Applicant Tracking System (ATS) auditor and hiring coach.
+Analyze the following Job Description (JD) and compare it against the candidate's list of saved skills.
+
+Candidate Skills:
+${userSkillNames.length > 0 ? userSkillNames.join(', ') : 'None listed yet'}
+
+Job Description:
+${jdText}
+
+Return a valid JSON object only. Do NOT include markdown code blocks, backticks, or other text outside the JSON. The JSON structure must match this EXACT format:
+{
+  "matchPct": 75,
+  "found": ["react", "javascript", "node.js", "css", "git", "communication"],
+  "matched": ["react", "javascript", "css", "git"],
+  "missing": ["node.js", "communication"],
+  "exp": "2+ years",
+  "degree": "Bachelor's Degree",
+  "roleType": "Full-time",
+  "suggestions": [
+    "Learn Node.js to bridge the backend skill gap",
+    "Prepare communication examples for the soft-skill requirements"
+  ]
+}`
+              }]
+            }
+          ]
+        })
+      })
+
+      const data = await response.json()
+      if (!response.ok || data.error) {
+        throw new Error(data.error?.message || data.error || 'Gemini API Error')
+      }
+
+      let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      rawText = rawText.trim()
+      if (rawText.startsWith('```')) {
+        rawText = rawText.replace(/^```[a-zA-Z]*\n/, '').replace(/\n```$/, '').trim()
+      }
+
+      const parsed = JSON.parse(rawText)
+      setResult({
+        found: parsed.found || [],
+        matched: parsed.matched || [],
+        missing: parsed.missing || [],
+        matchPct: typeof parsed.matchPct === 'number' ? parsed.matchPct : 0,
+        exp: parsed.exp || 'Not specified',
+        degree: parsed.degree || 'Not specified',
+        roleType: parsed.roleType || 'Full-time',
+        suggestions: parsed.suggestions || [],
+        wordCount: jdText.split(/\s+/).length
+      })
+    } catch (e) {
+      toast.error('AI analysis failed. Falling back to local scanner: ' + e.message)
+      // Fallback to local
       const { found, exp, degree, roleType } = extractFromJD(jdText)
       const matched = found.filter(k => userSkillNames.some(u => u.includes(k) || k.includes(u)))
       const missing = found.filter(k => !matched.includes(k))
       const matchPct = found.length === 0 ? 0 : Math.round((matched.length / found.length) * 100)
-      setResult({ found, matched, missing, matchPct, exp, degree, roleType, wordCount: jdText.split(/\s+/).length })
+      setResult({
+        found,
+        matched,
+        missing,
+        matchPct,
+        exp,
+        degree,
+        roleType,
+        suggestions: missing.map(k => `Learn ${k} — add it to your Planner as a weekly goal.`),
+        wordCount: jdText.split(/\s+/).length
+      })
+    } finally {
       setAnalyzing(false)
-    }, 800)
+    }
   }
 
   const scoreColor = (p) => p >= 70 ? 'text-green-400' : p >= 40 ? 'text-yellow-400' : 'text-red-400'
@@ -72,6 +174,26 @@ export default function JDAnalyzer() {
       maxWidth="max-w-4xl"
     >
       <Panel className="mb-6 animate-fade-up">
+        {/* Mode Switcher */}
+        <div className="flex gap-2 mb-4 bg-white/[0.02] border border-white/[0.04] p-1 rounded-xl max-w-xs">
+          <button
+            onClick={() => setMatchMode('ai')}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              matchMode === 'ai' ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            ✨ AI Semantic Match
+          </button>
+          <button
+            onClick={() => setMatchMode('local')}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              matchMode === 'local' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            🔍 Local Scanner
+          </button>
+        </div>
+
         <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Job Description</label>
         <textarea
           value={jdText}
@@ -88,9 +210,9 @@ export default function JDAnalyzer() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Analyzing...
+                {matchMode === 'ai' ? 'AI Matching...' : 'Scanning...'}
               </span>
-            ) : '🔍 Analyze JD'}
+            ) : matchMode === 'ai' ? '✨ Analyze with AI' : '🔍 Scan JD'}
           </button>
           {jdText && (
             <button onClick={() => { setJdText(''); setResult(null) }} className={secondaryButtonClass}>Clear</button>
@@ -168,14 +290,14 @@ export default function JDAnalyzer() {
           </div>
 
           {/* Action plan */}
-          {result.missing.length > 0 && (
+          {result.suggestions && result.suggestions.length > 0 && (
             <Panel>
               <h3 className="font-bold text-sm mb-3">📋 Suggested Action Plan</h3>
               <ul className="space-y-2">
-                {result.missing.slice(0, 5).map(k => (
-                  <li key={k} className="flex items-start gap-2 text-sm text-gray-300">
+                {result.suggestions.slice(0, 6).map((sugg, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
                     <span className="text-indigo-400 mt-0.5">→</span>
-                    Learn <strong className="text-white capitalize mx-1">{k}</strong> — add it to your Planner as a weekly goal.
+                    <span>{sugg}</span>
                   </li>
                 ))}
               </ul>

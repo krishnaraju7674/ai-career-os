@@ -1,18 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import AppShell from '../components/AppShell'
 import { Panel, Card3D, StatusBadge } from '../components/ui'
 
 export default function VideoHub() {
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
-  const [watchedVideos, setWatchedVideos] = useState([])
-
-  useEffect(() => {
-    const saved = localStorage.getItem('watched_videos')
-    if (saved) {
-      setWatchedVideos(JSON.parse(saved))
+  const [watchedVideos, setWatchedVideos] = useState(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('watched_videos') : null
+    try {
+      return saved ? JSON.parse(saved) : []
+    } catch (e) {
+      console.error('Failed to parse watched videos local cache:', e)
+      return []
     }
-  }, [])
+  })
 
   const toggleWatched = (id) => {
     let updated = [...watchedVideos]

@@ -38,6 +38,7 @@ import Achievements from './pages/Achievements'
 import ResumeTailor from './pages/ResumeTailor'
 import SkillTree from './pages/SkillTree'
 import TestSimulator from './pages/TestSimulator'
+import CodingSandbox from './pages/CodingSandbox'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -96,6 +97,7 @@ function AppRoutes() {
       <Route path="/resume-tailor"   element={<PrivateRoute><ResumeTailor /></PrivateRoute>} />
       <Route path="/skill-tree"      element={<PrivateRoute><SkillTree /></PrivateRoute>} />
       <Route path="/test-simulator"  element={<PrivateRoute><TestSimulator /></PrivateRoute>} />
+      <Route path="/code-sandbox"    element={<PrivateRoute><CodingSandbox /></PrivateRoute>} />
 
       {/* 404 Catch All */}
       <Route path="*"               element={<NotFound />} />

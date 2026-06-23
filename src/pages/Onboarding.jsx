@@ -69,7 +69,6 @@ export default function Onboarding() {
   }
 
   const STEPS = ['Welcome', 'Your Role', 'Your Skills']
-  const progress = ((step - 1) / (STEPS.length - 1)) * 100
 
   return (
     <div className="min-h-screen bg-[#030712] flex items-center justify-center px-4 relative overflow-hidden">

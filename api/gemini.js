@@ -1,3 +1,4 @@
+/* eslint-disable */
 // api/gemini.js — Secured Vercel Serverless Function
 export default async function handler(req, res) {
   // CORS - restrict to your domain

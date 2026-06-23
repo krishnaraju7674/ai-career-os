@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react'
 import AppShell from '../components/AppShell'
 import { Panel, Card3D } from '../components/ui'
-import { readUserData } from '../services/localUserData'
 import { useAuth } from '../context/useAuth'
+import { supabase } from '../services/supabaseClient'
 
 export default function Achievements() {
   const { user } = useAuth()
-  const [unlockedCount, setUnlockedCount] = useState(0)
-
-  // We read stats from localStorage to dynamically compute badge completion!
+  const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     skillsCount: 0,
     interviewCount: 0,
@@ -20,26 +18,39 @@ export default function Achievements() {
   })
 
   useEffect(() => {
-    // Dynamically query stats
-    const tasks = readUserData(user.id, 'plannerTasks', [])
-    const interviews = readUserData(user.id, 'interviewSessions', [])
-    const goals = JSON.parse(localStorage.getItem('career_goals') || '[]')
-    const journal = JSON.parse(localStorage.getItem('career_journal') || '[]')
-    const apps = readUserData(user.id, 'jobApplications', [])
-    
-    // Check pomodoros from localStorage (today's key is a proxy)
-    const today = new Date().toISOString().split('T')[0]
-    const pomos = Number(localStorage.getItem(`pomo_sessions_${today}`) || 0)
+    const fetchStats = async () => {
+      const [
+        { data: skills },
+        { data: tasks },
+        { data: interviews },
+        { data: goals },
+        { data: journal },
+        { data: apps },
+        { data: pomos }
+      ] = await Promise.all([
+        supabase.from('user_skills').select('id').eq('user_id', user.id),
+        supabase.from('planner_tasks').select('id').eq('user_id', user.id),
+        supabase.from('interview_sessions').select('id').eq('user_id', user.id),
+        supabase.from('career_goals').select('id').eq('user_id', user.id),
+        supabase.from('career_journal').select('id').eq('user_id', user.id),
+        supabase.from('job_applications').select('id').eq('user_id', user.id),
+        supabase.from('pomodoro_sessions').select('sessions_completed').eq('user_id', user.id)
+      ])
 
-    setStats({
-      skillsCount: 6, // Mock/approx initial skills
-      interviewCount: interviews.length,
-      tasksCount: tasks.length,
-      goalsCount: goals.length,
-      journalCount: journal.length,
-      pomodoroCount: pomos,
-      applicationsCount: apps.length
-    })
+      const totalPomos = (pomos || []).reduce((sum, p) => sum + (p.sessions_completed || 0), 0)
+
+      setStats({
+        skillsCount: skills?.length || 0,
+        interviewCount: interviews?.length || 0,
+        tasksCount: tasks?.length || 0,
+        goalsCount: goals?.length || 0,
+        journalCount: journal?.length || 0,
+        pomodoroCount: totalPomos,
+        applicationsCount: apps?.length || 0
+      })
+      setLoading(false)
+    }
+    fetchStats()
   }, [user.id])
 
   const badges = [
@@ -150,44 +161,52 @@ export default function Achievements() {
         </Panel>
 
         {/* Badges Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {badges.map((b) => (
-            <Card3D 
-              key={b.id} 
-              className={`flex flex-col items-center text-center p-6 border transition-all ${
-                b.isUnlocked 
-                  ? 'border-cyan-500/20 bg-cyan-500/[0.01] hover:border-cyan-500/40' 
-                  : 'border-white/[0.04] bg-white/[0.01] opacity-50'
-              }`}
-            >
-              {/* Badge Icon */}
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 relative ${
-                b.isUnlocked 
-                  ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 shadow-lg shadow-cyan-500/10 border border-cyan-500/30' 
-                  : 'bg-white/5 border border-white/10'
-              }`}>
-                {b.emoji}
-                {!b.isUnlocked && (
-                  <div className="absolute inset-0 bg-[#020617]/75 rounded-full flex items-center justify-center text-xs text-gray-400 font-bold">
-                    🔒
-                  </div>
-                )}
-              </div>
+        {loading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="h-48 shimmer rounded-2xl" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {badges.map((b) => (
+              <Card3D 
+                key={b.id} 
+                className={`flex flex-col items-center text-center p-6 border transition-all ${
+                  b.isUnlocked 
+                    ? 'border-cyan-500/20 bg-cyan-500/[0.01] hover:border-cyan-500/40' 
+                    : 'border-white/[0.04] bg-white/[0.01] opacity-50'
+                }`}
+              >
+                {/* Badge Icon */}
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 relative ${
+                  b.isUnlocked 
+                    ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 shadow-lg shadow-cyan-500/10 border border-cyan-500/30' 
+                    : 'bg-white/5 border border-white/10'
+                }`}>
+                  {b.emoji}
+                  {!b.isUnlocked && (
+                    <div className="absolute inset-0 bg-[#020617]/75 rounded-full flex items-center justify-center text-xs text-gray-400 font-bold">
+                      🔒
+                    </div>
+                  )}
+                </div>
 
-              <h3 className="text-lg font-bold text-white mb-1">{b.title}</h3>
-              <p className="text-xs text-gray-400 max-w-xs mb-3">{b.desc}</p>
+                <h3 className="text-lg font-bold text-white mb-1">{b.title}</h3>
+                <p className="text-xs text-gray-400 max-w-xs mb-3">{b.desc}</p>
 
-              {/* Progress/Condition Text */}
-              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md border ${
-                b.isUnlocked 
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                  : 'bg-white/5 text-gray-500 border-white/10'
-              }`}>
-                {b.isUnlocked ? 'Unlocked ✓' : `Req: ${b.condition}`}
-              </span>
-            </Card3D>
-          ))}
-        </div>
+                {/* Progress/Condition Text */}
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md border ${
+                  b.isUnlocked 
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                    : 'bg-white/5 text-gray-500 border-white/10'
+                }`}>
+                  {b.isUnlocked ? 'Unlocked ✓' : `Req: ${b.condition}`}
+                </span>
+              </Card3D>
+            ))}
+          </div>
+        )}
       </div>
     </AppShell>
   )

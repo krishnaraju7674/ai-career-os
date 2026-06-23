@@ -3,7 +3,7 @@ import AppShell from '../components/AppShell'
 import { Panel, primaryButtonClass } from '../components/ui'
 import { useAuth } from '../context/useAuth'
 import { useToast } from '../context/ToastContext'
-import { readUserData, writeUserData } from '../services/localUserData'
+import { supabase } from '../services/supabaseClient'
 
 const SKILL_NODES = [
   {
@@ -67,22 +67,46 @@ export default function SkillTree() {
   const { user } = useAuth()
   const toast = useToast()
   
-  // Read completed nodes from local storage
   const [completedNodeIds, setCompletedNodeIds] = useState([])
+  const [loading, setLoading] = useState(true)
   const [activeNode, setActiveNode] = useState(null)
   
-  // Quiz states
-  const [answers, setAnswers] = useState({}) // { qIdx: selectedOptIdx }
+  const [answers, setAnswers] = useState({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
   const [quizSuccess, setQuizSuccess] = useState(false)
 
   useEffect(() => {
-    const completed = readUserData(user.id, 'completedSkillNodes', [])
-    setCompletedNodeIds(completed)
+    supabase
+      .from('completed_skill_nodes')
+      .select('node_id')
+      .eq('user_id', user.id)
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn('Failed to load skill progress from Supabase, trying localStorage:', error)
+          try {
+            const cached = localStorage.getItem(`completed_skill_nodes_${user.id}`)
+            if (cached) setCompletedNodeIds(JSON.parse(cached))
+          } catch (e) {
+            console.error('Failed to parse local completed skill nodes cache:', e)
+          }
+        } else {
+          setCompletedNodeIds((data || []).map(d => d.node_id))
+        }
+        setLoading(false)
+      })
   }, [user.id])
 
+  useEffect(() => {
+    if (!loading && user?.id) {
+      try {
+        localStorage.setItem(`completed_skill_nodes_${user.id}`, JSON.stringify(completedNodeIds))
+      } catch (e) {
+        console.error('Failed to save completed skill nodes to localStorage:', e)
+      }
+    }
+  }, [completedNodeIds, loading, user?.id])
+
   const openNode = (node) => {
-    // Check if locked
     const isLocked = node.id > 1 && !completedNodeIds.includes(node.id - 1)
     if (isLocked) {
       toast.warning('This node is locked. Please complete the previous node first!')
@@ -99,7 +123,7 @@ export default function SkillTree() {
     setAnswers(prev => ({ ...prev, [qIdx]: optIdx }))
   }
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     const qCount = activeNode.quiz.length
     if (Object.keys(answers).length < qCount) {
       toast.warning('Please answer all questions before submitting.')
@@ -117,9 +141,15 @@ export default function SkillTree() {
     if (correct) {
       toast.success('All answers correct! Node unlocked! 🎉')
       if (!completedNodeIds.includes(activeNode.id)) {
-        const updated = [...completedNodeIds, activeNode.id]
-        setCompletedNodeIds(updated)
-        writeUserData(user.id, 'completedSkillNodes', updated)
+        const { error } = await supabase
+          .from('completed_skill_nodes')
+          .insert({ user_id: user.id, node_id: activeNode.id })
+        
+        if (error) {
+          toast.error('Failed to save skill tree progress: ' + error.message)
+        } else {
+          setCompletedNodeIds(prev => [...prev, activeNode.id])
+        }
       }
     } else {
       toast.error('Some answers were incorrect. Review and try again!')
@@ -165,52 +195,103 @@ export default function SkillTree() {
 
         {/* Right Side: Visual Tree Map */}
         <Panel className="relative overflow-hidden min-h-[600px] flex flex-col items-center justify-center py-10">
-          <div className="absolute inset-0 pointer-events-none flex justify-center">
-            {/* Draw a vertical connection line */}
-            <div className="w-[3px] bg-gradient-to-b from-cyan-500/80 via-blue-500/40 to-white/5 h-full opacity-60" />
-          </div>
+          {loading ? (
+            <div className="space-y-6 w-full max-w-md animate-pulse">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="h-20 shimmer rounded-2xl" />
+              ))}
+            </div>
+          ) : (
+            <>
+              {/* Interactive SVG Connection paths */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {/* Segment 1 (1 -> 2) */}
+                <path 
+                  d="M 35 10 C 35 18, 65 18, 65 26" 
+                  fill="none" 
+                  stroke={completedNodeIds.includes(1) ? '#06b6d4' : 'rgba(255,255,255,0.03)'} 
+                  strokeWidth={completedNodeIds.includes(1) ? 2.5 : 1.5} 
+                  className={completedNodeIds.includes(1) ? 'drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]' : ''}
+                />
+                {/* Segment 2 (2 -> 3) */}
+                <path 
+                  d="M 65 26 C 65 34, 35 34, 35 42" 
+                  fill="none" 
+                  stroke={completedNodeIds.includes(2) ? '#06b6d4' : 'rgba(255,255,255,0.03)'} 
+                  strokeWidth={completedNodeIds.includes(2) ? 2.5 : 1.5} 
+                  className={completedNodeIds.includes(2) ? 'drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]' : ''}
+                />
+                {/* Segment 3 (3 -> 4) */}
+                <path 
+                  d="M 35 42 C 35 50, 65 50, 65 58" 
+                  fill="none" 
+                  stroke={completedNodeIds.includes(3) ? '#06b6d4' : 'rgba(255,255,255,0.03)'} 
+                  strokeWidth={completedNodeIds.includes(3) ? 2.5 : 1.5} 
+                  className={completedNodeIds.includes(3) ? 'drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]' : ''}
+                />
+                {/* Segment 4 (4 -> 5) */}
+                <path 
+                  d="M 65 58 C 65 66, 35 66, 35 74" 
+                  fill="none" 
+                  stroke={completedNodeIds.includes(4) ? '#06b6d4' : 'rgba(255,255,255,0.03)'} 
+                  strokeWidth={completedNodeIds.includes(4) ? 2.5 : 1.5} 
+                  className={completedNodeIds.includes(4) ? 'drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]' : ''}
+                />
+                {/* Segment 5 (5 -> 6) */}
+                <path 
+                  d="M 35 74 C 35 82, 65 82, 65 90" 
+                  fill="none" 
+                  stroke={completedNodeIds.includes(5) ? '#06b6d4' : 'rgba(255,255,255,0.03)'} 
+                  strokeWidth={completedNodeIds.includes(5) ? 2.5 : 1.5} 
+                  className={completedNodeIds.includes(5) ? 'drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]' : ''}
+                />
+              </svg>
 
-          <div className="relative z-10 flex flex-col items-center gap-12 w-full max-w-md">
-            {SKILL_NODES.map((node, idx) => {
-              const isCompleted = completedNodeIds.includes(node.id)
-              const isUnlocked = node.id === 1 || completedNodeIds.includes(node.id - 1)
-              const isLocked = !isUnlocked && !isCompleted
+              <div className="relative z-10 flex flex-col gap-14 w-full max-w-md">
+                {SKILL_NODES.map((node) => {
+                  const isCompleted = completedNodeIds.includes(node.id)
+                  const isUnlocked = node.id === 1 || completedNodeIds.includes(node.id - 1)
+                  const isLocked = !isUnlocked && !isCompleted
+                  const isLeft = node.id % 2 === 1
 
-              return (
-                <button
-                  key={node.id}
-                  onClick={() => openNode(node)}
-                  className={`w-full flex items-center gap-4 text-left p-4 rounded-2xl border transition-all duration-200 cursor-pointer ${
-                    isCompleted 
-                      ? 'bg-gradient-to-r from-cyan-950/40 to-blue-950/40 border-cyan-500/50 shadow-md shadow-cyan-500/10 hover:scale-[1.02]'
-                      : isUnlocked 
-                      ? 'bg-white/[0.03] border-cyan-400/40 text-white hover:scale-[1.02] hover:border-cyan-400/60'
-                      : 'bg-white/[0.01] border-white/5 text-gray-600 opacity-50 cursor-not-allowed'
-                  }`}
-                >
-                  {/* Node Badge/Level */}
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-sm shrink-0 border transition-colors ${
-                    isCompleted 
-                      ? 'bg-cyan-500 border-cyan-400 text-white shadow-lg shadow-cyan-500/30'
-                      : isUnlocked 
-                      ? 'bg-white/[0.04] border-cyan-400/30 text-cyan-400'
-                      : 'bg-white/[0.02] border-white/5 text-gray-600'
-                  }`}>
-                    {isCompleted ? '✓' : `Lvl ${node.id}`}
-                  </div>
+                  return (
+                    <div key={node.id} className={`flex w-full ${isLeft ? 'justify-start' : 'justify-end'}`}>
+                      <button
+                        onClick={() => openNode(node)}
+                        className={`w-[75%] flex items-center gap-4 text-left p-4 rounded-2xl border transition-all duration-200 cursor-pointer ${
+                          isCompleted 
+                            ? 'bg-gradient-to-r from-cyan-950/40 to-blue-950/40 border-cyan-500/50 shadow-md shadow-cyan-500/10 hover:scale-[1.02]'
+                            : isUnlocked 
+                            ? 'bg-white/[0.03] border-cyan-400/40 text-white hover:scale-[1.02] hover:border-cyan-400/60'
+                            : 'bg-white/[0.01] border-white/5 text-gray-600 opacity-50 cursor-not-allowed'
+                        }`}
+                      >
+                        {/* Node Badge/Level */}
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-sm shrink-0 border transition-colors ${
+                          isCompleted 
+                            ? 'bg-cyan-500 border-cyan-400 text-white shadow-lg shadow-cyan-500/30'
+                            : isUnlocked 
+                            ? 'bg-white/[0.04] border-cyan-400/30 text-cyan-400'
+                            : 'bg-white/[0.02] border-white/5 text-gray-600'
+                        }`}>
+                          {isCompleted ? '✓' : `Lvl ${node.id}`}
+                        </div>
 
-                  <div className="flex-1 min-w-0">
-                    <h4 className={`font-bold text-sm transition-colors ${isLocked ? 'text-gray-600' : 'text-white'}`}>{node.title}</h4>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">{node.desc}</p>
-                  </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className={`font-bold text-sm transition-colors ${isLocked ? 'text-gray-600' : 'text-white'}`}>{node.title}</h4>
+                          <p className="text-xs text-gray-500 truncate mt-0.5">{node.desc}</p>
+                        </div>
 
-                  {isLocked && (
-                    <span className="text-xs text-gray-600 bg-white/[0.02] px-2 py-0.5 rounded-md border border-white/5 font-semibold">Locked 🔒</span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
+                        {isLocked && (
+                          <span className="text-xs text-gray-600 bg-white/[0.02] px-2 py-0.5 rounded-md border border-white/5 font-semibold">Locked 🔒</span>
+                        )}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </Panel>
       </div>
 

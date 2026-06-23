@@ -43,7 +43,22 @@ export default function Planner() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (error) { toast.error('Failed to load tasks.'); setLoading(false); return }
+      if (error) {
+        console.warn('Failed to load tasks from Supabase, trying localStorage:', error)
+        try {
+          const cached = localStorage.getItem(`planner_tasks_${user.id}`)
+          if (cached) {
+            setTasks(JSON.parse(cached))
+          } else {
+            setTasks(starterTasks(user.id))
+          }
+        } catch (e) {
+          console.error('Failed to parse local tasks cache:', e)
+          setTasks(starterTasks(user.id))
+        }
+        setLoading(false)
+        return
+      }
 
       if (data.length === 0) {
         // Seed starter tasks for new users
@@ -56,6 +71,16 @@ export default function Planner() {
     }
     fetchTasks()
   }, [user.id])
+
+  useEffect(() => {
+    if (!loading && user?.id) {
+      try {
+        localStorage.setItem(`planner_tasks_${user.id}`, JSON.stringify(tasks))
+      } catch (e) {
+        console.error('Failed to save planner tasks to localStorage:', e)
+      }
+    }
+  }, [tasks, loading, user?.id])
 
   const filteredTasks = useMemo(() => {
     if (filter === 'All') return tasks

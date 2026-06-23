@@ -1,8 +1,13 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import AppShell from '../components/AppShell'
 import { Panel, Card3D, ProgressRing, primaryButtonClass, secondaryButtonClass } from '../components/ui'
+import { supabase } from '../services/supabaseClient'
+import { useAuth } from '../context/useAuth'
+import { useToast } from '../context/ToastContext'
 
 export default function Pomodoro() {
+  const { user } = useAuth()
+  const toast = useToast()
   const [mode, setMode] = useState('work') // 'work', 'short', 'long'
   const [timeLeft, setTimeLeft] = useState(25 * 60)
   const [isRunning, setIsRunning] = useState(false)
@@ -23,14 +28,99 @@ export default function Pomodoro() {
     long: "🌴 Long Break"
   }
 
-  // Load localStorage data
+  const today = useMemo(() => new Date().toISOString().split('T')[0], [])
+
+  // Load Supabase focus session data
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0]
-    const savedSessions = localStorage.getItem(`pomo_sessions_${today}`)
-    const savedTime = localStorage.getItem(`pomo_time_${today}`)
-    if (savedSessions) setSessionsCompleted(Number(savedSessions))
-    if (savedTime) setTotalFocusTime(Number(savedTime))
-  }, [])
+    supabase
+      .from('pomodoro_sessions')
+      .select('sessions_completed, minutes_focused')
+      .eq('user_id', user.id)
+      .eq('session_date', today)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn('Failed to load focus metrics from Supabase, trying localStorage:', error)
+          try {
+            const cached = localStorage.getItem(`pomodoro_sessions_${user.id}_${today}`)
+            if (cached) {
+              const { sessionsCompleted: cSessions, totalFocusTime: cTime } = JSON.parse(cached)
+              if (cSessions !== undefined) setSessionsCompleted(cSessions)
+              if (cTime !== undefined) setTotalFocusTime(cTime)
+            }
+          } catch (e) {
+            console.error('Failed to parse local focus metrics cache:', e)
+          }
+        } else if (data) {
+          setSessionsCompleted(data.sessions_completed || 0)
+          setTotalFocusTime(data.minutes_focused || 0)
+        }
+      })
+  }, [user.id, today])
+
+  useEffect(() => {
+    if (user?.id) {
+      try {
+        localStorage.setItem(`pomodoro_sessions_${user.id}_${today}`, JSON.stringify({ sessionsCompleted, totalFocusTime }))
+      } catch (e) {
+        console.error('Failed to save focus metrics to localStorage:', e)
+      }
+    }
+  }, [sessionsCompleted, totalFocusTime, user?.id, today])
+
+  function playBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(880, ctx.currentTime) // A5 note
+      gain.gain.setValueAtTime(0.1, ctx.currentTime)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start()
+      osc.stop(ctx.currentTime + 0.8)
+    } catch (e) {
+      console.log("Audio not supported or interaction blocked:", e)
+    }
+  }
+
+  function changeMode(newMode) {
+    setIsRunning(false)
+    setMode(newMode)
+    setTimeLeft(modeTimes[newMode])
+  }
+
+  async function handleSessionComplete() {
+    setIsRunning(false)
+    playBeep()
+    
+    if (mode === 'work') {
+      const nextSessions = sessionsCompleted + 1
+      const nextTime = totalFocusTime + 25
+      
+      const { error } = await supabase
+        .from('pomodoro_sessions')
+        .upsert({
+          user_id: user.id,
+          session_date: today,
+          sessions_completed: nextSessions,
+          minutes_focused: nextTime
+        }, { onConflict: 'user_id, session_date' })
+
+      if (error) {
+        toast.error('Failed to save focus metrics: ' + error.message)
+      } else {
+        setSessionsCompleted(nextSessions)
+        setTotalFocusTime(nextTime)
+        toast.success("Great job! Work session completed. Take a break! 🎉")
+      }
+      changeMode('short')
+    } else {
+      toast.success("Break completed! Ready to focus? 💪")
+      changeMode('work')
+    }
+  }
 
   // Timer tick
   useEffect(() => {
@@ -51,49 +141,6 @@ export default function Pomodoro() {
 
     return () => clearInterval(timerRef.current)
   }, [isRunning, mode])
-
-  const handleSessionComplete = () => {
-    setIsRunning(false)
-    playBeep()
-    
-    const today = new Date().toISOString().split('T')[0]
-    if (mode === 'work') {
-      const nextSessions = sessionsCompleted + 1
-      const nextTime = totalFocusTime + 25
-      setSessionsCompleted(nextSessions)
-      setTotalFocusTime(nextTime)
-      localStorage.setItem(`pomo_sessions_${today}`, String(nextSessions))
-      localStorage.setItem(`pomo_time_${today}`, String(nextTime))
-      alert("Great job! Work session completed. Take a break!")
-      changeMode('short')
-    } else {
-      alert("Break completed! Ready to focus?")
-      changeMode('work')
-    }
-  }
-
-  const changeMode = (newMode) => {
-    setIsRunning(false)
-    setMode(newMode)
-    setTimeLeft(modeTimes[newMode])
-  }
-
-  const playBeep = () => {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)()
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(880, ctx.currentTime) // A5 note
-      gain.gain.setValueAtTime(0.1, ctx.currentTime)
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.start()
-      osc.stop(ctx.currentTime + 0.8)
-    } catch (e) {
-      console.log("Audio not supported or interaction blocked:", e)
-    }
-  }
 
   const resetTimer = () => {
     setIsRunning(false)

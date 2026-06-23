@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react'
 import AppShell from '../components/AppShell'
-import { Panel, Card3D, StatusBadge, inputClass, primaryButtonClass, secondaryButtonClass } from '../components/ui'
+import { Panel, Card3D, StatusBadge, inputClass, primaryButtonClass } from '../components/ui'
+import { supabase } from '../services/supabaseClient'
+import { useAuth } from '../context/useAuth'
+import { useToast } from '../context/ToastContext'
 
 export default function Goals() {
+  const { user } = useAuth()
+  const toast = useToast()
   const [goals, setGoals] = useState([])
+  const [loading, setLoading] = useState(true)
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
   const [targetDate, setTargetDate] = useState('')
@@ -12,18 +18,38 @@ export default function Goals() {
   const [subGoalsInput, setSubGoalsInput] = useState('')
 
   useEffect(() => {
-    const saved = localStorage.getItem('career_goals')
-    if (saved) {
-      setGoals(JSON.parse(saved))
+    supabase
+      .from('career_goals')
+      .select('id, title, desc:description, targetDate:target_date, category, priority, progress, completed, subGoals:sub_goals, createdAt:created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn('Failed to load goals from Supabase, trying localStorage:', error)
+          try {
+            const cached = localStorage.getItem(`career_goals_${user.id}`)
+            if (cached) setGoals(JSON.parse(cached))
+          } catch (e) {
+            console.error('Failed to parse local goals cache:', e)
+          }
+        } else {
+          setGoals(data || [])
+        }
+        setLoading(false)
+      })
+  }, [user.id])
+
+  useEffect(() => {
+    if (!loading && user?.id) {
+      try {
+        localStorage.setItem(`career_goals_${user.id}`, JSON.stringify(goals))
+      } catch (e) {
+        console.error('Failed to save goals to localStorage:', e)
+      }
     }
-  }, [])
+  }, [goals, loading, user?.id])
 
-  const saveGoals = (updated) => {
-    setGoals(updated)
-    localStorage.setItem('career_goals', JSON.stringify(updated))
-  }
-
-  const handleAddGoal = (e) => {
+  const handleAddGoal = async (e) => {
     e.preventDefault()
     if (!title.trim()) return
 
@@ -33,22 +59,32 @@ export default function Goals() {
       .filter(Boolean)
       .map((text, id) => ({ id, text, completed: false }))
 
-    const newGoal = {
-      id: Date.now().toString(),
+    const newGoalData = {
+      user_id: user.id,
       title,
-      desc,
-      targetDate,
+      description: desc,
+      target_date: targetDate || null,
       category,
       priority,
       progress: 0,
       completed: false,
-      subGoals: subGoalsList,
-      createdAt: new Date().toISOString().split('T')[0]
+      sub_goals: subGoalsList
     }
 
-    const updated = [newGoal, ...goals]
-    saveGoals(updated)
-    
+    const { data, error } = await supabase
+      .from('career_goals')
+      .insert(newGoalData)
+      .select('id, title, desc:description, targetDate:target_date, category, priority, progress, completed, subGoals:sub_goals, createdAt:created_at')
+      .single()
+
+    if (error) {
+      toast.error('Failed to add goal: ' + error.message)
+      return
+    }
+
+    setGoals(prev => [data, ...prev])
+    toast.success('Goal set successfully! 🎯')
+
     // Clear inputs
     setTitle('')
     setDesc('')
@@ -56,63 +92,121 @@ export default function Goals() {
     setSubGoalsInput('')
   }
 
-  const handleDeleteGoal = (id) => {
-    const updated = goals.filter(g => g.id !== id)
-    saveGoals(updated)
+  const handleDeleteGoal = async (id) => {
+    const { error } = await supabase
+      .from('career_goals')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      toast.error('Failed to delete goal.')
+      return
+    }
+
+    setGoals(prev => prev.filter(g => g.id !== id))
+    toast.success('Goal deleted.')
   }
 
-  const handleToggleSubGoal = (goalId, subGoalId) => {
-    const updated = goals.map(g => {
+  const handleToggleSubGoal = async (goalId, subGoalId) => {
+    const goalToUpdate = goals.find(g => g.id === goalId)
+    if (!goalToUpdate) return
+
+    const nextSubGoals = goalToUpdate.subGoals.map(s => {
+      if (s.id === subGoalId) return { ...s, completed: !s.completed }
+      return s
+    })
+
+    const completedCount = nextSubGoals.filter(s => s.completed).length
+    const nextProgress = nextSubGoals.length === 0 ? goalToUpdate.progress : Math.round((completedCount / nextSubGoals.length) * 100)
+    const nextCompleted = nextProgress === 100
+
+    const { error } = await supabase
+      .from('career_goals')
+      .update({
+        sub_goals: nextSubGoals,
+        progress: nextProgress,
+        completed: nextCompleted
+      })
+      .eq('id', goalId)
+
+    if (error) {
+      toast.error('Failed to update milestone.')
+      return
+    }
+
+    setGoals(prev => prev.map(g => {
       if (g.id === goalId) {
-        const nextSubGoals = g.subGoals.map(s => {
-          if (s.id === subGoalId) return { ...s, completed: !s.completed }
-          return s
-        })
-        
-        // Compute new progress based on sub-goals
-        const completedCount = nextSubGoals.filter(s => s.completed).length
-        const nextProgress = nextSubGoals.length === 0 ? g.progress : Math.round((completedCount / nextSubGoals.length) * 100)
-        
         return { 
           ...g, 
           subGoals: nextSubGoals, 
           progress: nextProgress,
-          completed: nextProgress === 100
+          completed: nextCompleted
         }
       }
       return g
-    })
-    saveGoals(updated)
+    }))
   }
 
-  const handleProgressChange = (id, newProgress) => {
-    const updated = goals.map(g => {
+  const handleProgressChange = async (id, newProgress) => {
+    const nextCompleted = newProgress === 100
+    const { error } = await supabase
+      .from('career_goals')
+      .update({
+        progress: newProgress,
+        completed: nextCompleted
+      })
+      .eq('id', id)
+
+    if (error) {
+      toast.error('Failed to update progress.')
+      return
+    }
+
+    setGoals(prev => prev.map(g => {
       if (g.id === id) {
         return { 
           ...g, 
           progress: newProgress,
-          completed: newProgress === 100 
+          completed: nextCompleted 
         }
       }
       return g
-    })
-    saveGoals(updated)
+    }))
   }
 
-  const handleToggleComplete = (id) => {
-    const updated = goals.map(g => {
+  const handleToggleComplete = async (id) => {
+    const goalToUpdate = goals.find(g => g.id === id)
+    if (!goalToUpdate) return
+
+    const nextCompleted = !goalToUpdate.completed
+    const nextProgress = nextCompleted ? 100 : 0
+    const nextSubGoals = goalToUpdate.subGoals.map(s => ({ ...s, completed: nextCompleted }))
+
+    const { error } = await supabase
+      .from('career_goals')
+      .update({
+        completed: nextCompleted,
+        progress: nextProgress,
+        sub_goals: nextSubGoals
+      })
+      .eq('id', id)
+
+    if (error) {
+      toast.error('Failed to update goal completion.')
+      return
+    }
+
+    setGoals(prev => prev.map(g => {
       if (g.id === id) {
-        const nextCompleted = !g.completed
         return {
           ...g,
           completed: nextCompleted,
-          progress: nextCompleted ? 100 : 0,
-          subGoals: g.subGoals.map(s => ({ ...s, completed: nextCompleted }))
+          progress: nextProgress,
+          subGoals: nextSubGoals
         }
       }
       return g
-    })
-    saveGoals(updated)
+    }))
   }
 
   return (
